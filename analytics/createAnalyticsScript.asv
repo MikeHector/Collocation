@@ -84,7 +84,6 @@ disp(['Error in analytical objective function is ',...
 assert(oldObj-newObj < 1e-10, 'Error in analytical objective func is too high');
 
 % Constraints
-
 %Linear equality constraints - state at beginning is same as end translated
 %in x!
 rowLen = p.dof*2 + p.cntrl_dof;
@@ -116,6 +115,7 @@ disp('Fetching symbolic constraints')
 [c_ineq, c_eq] = CONST(dvBlock,vStruc);
 disp('Done')
 
+% [c_ineq_from_old, c_eq_from_old] = nonlinear_constraint_func2(dv_num_block, symparamEX);
 
 %Make symbolic files (Just to check!)
 if makefile == 1
@@ -170,47 +170,46 @@ disp('Done')
 
 %Constraint Hessians
 if makehessian == 1
-    for justHideThisStuff =1:1
-        i_c_eq = size(grad_c_eq,2);
-        hess_c_eq = cell(1,i_c_eq);
-        for i = 1:i_c_eq
-            hess_c_eq{i} = jacobian(grad_c_eq(:,i),dv);
-            disp('Equality constraint Hessian generating...')
-            disp(['Progress: ', num2str(i/i_c_eq*100), ' %'])
-        end
-
-        i_c_ineq = size(grad_c_ineq,2);
-        hess_c_ineq = cell(1,i_c_ineq);
-        for i = 1:i_c_ineq
-            hess_c_ineq{i} = jacobian(grad_c_ineq(:,i),dv);
-            disp('Inequality constraint Hessian generating...')
-            disp(['Progress: ', num2str(i/i_c_ineq*100), ' %'])
-        end
-
-        %Build equality constraint Hessian
-        disp('Equality constraint Hessian file generating...')
-        for i = 1:i_c_eq
-            ii = num2str(i);
-            thename = ['zhessceq',ii];
-            filename = [currdir,dirname,'\', thename '.m'];
-            matlabFunction(hess_c_eq{i}, 'file',filename,'vars',{dv, vList},'Optimize', false);
-            disp(['Progress: ', num2str(i/i_c_eq*100), ' %'])
-        end
-
-        %Build inequality constraint Hessian
-        disp('Inequality constraint Hessian file generating...')
-        for i = 1:i_c_ineq
-            ii = num2str(i);
-            thename = ['zhesscineq',ii];
-            filename =  [currdir,dirname,'\', thename '.m'];
-            matlabFunction(hess_c_ineq{i}, 'file',filename,'vars',{dv, vList},'Optimize', false);
-            disp(['Progress: ', num2str(i/i_c_ineq*100), ' %'])
-        end
-
-        %Compile Hessians together
-        filename = 'hessfinal.m';
-        makeHessianFinal(i_c_eq, i_c_ineq, filename);
+    for whatthefuck =
+    i_c_eq = size(grad_c_eq,2);
+    hess_c_eq = cell(1,i_c_eq);
+    for i = 1:i_c_eq
+        hess_c_eq{i} = jacobian(grad_c_eq(:,i),dv);
+        disp('Equality constraint Hessian generating...')
+        disp(['Progress: ', num2str(i/i_c_eq*100), ' %'])
     end
+
+    i_c_ineq = size(grad_c_ineq,2);
+    hess_c_ineq = cell(1,i_c_ineq);
+    for i = 1:i_c_ineq
+        hess_c_ineq{i} = jacobian(grad_c_ineq(:,i),dv);
+        disp('Inequality constraint Hessian generating...')
+        disp(['Progress: ', num2str(i/i_c_ineq*100), ' %'])
+    end
+
+    %Build equality constraint Hessian
+    disp('Equality constraint Hessian file generating...')
+    for i = 1:i_c_eq
+        ii = num2str(i);
+        thename = ['zhessceq',ii];
+        filename = [currdir,dirname,'\', thename '.m'];
+        matlabFunction(hess_c_eq{i}, 'file',filename,'vars',{dv, vList},'Optimize', false);
+        disp(['Progress: ', num2str(i/i_c_eq*100), ' %'])
+    end
+
+    %Build inequality constraint Hessian
+    disp('Inequality constraint Hessian file generating...')
+    for i = 1:i_c_ineq
+        ii = num2str(i);
+        thename = ['zhesscineq',ii];
+        filename =  [currdir,dirname,'\', thename '.m'];
+        matlabFunction(hess_c_ineq{i}, 'file',filename,'vars',{dv, vList},'Optimize', false);
+        disp(['Progress: ', num2str(i/i_c_ineq*100), ' %'])
+    end
+    
+    %Compile Hessians together
+    filename = 'hessfinal.m';
+    makeHessianFinal(i_c_eq, i_c_ineq, filename);
 end
 
 makeNewSaveStruc(p,Example,currdir,dirname);

@@ -10,12 +10,15 @@ function [dv, PsymStruc, v, Example] = makeParamSym(CollocationParameters)
 %     x1 = x(1)... x79 = x(79); x80 = y(1)...theta... Tstance, Tflight,
 %     apexheight
 
-    %Make the parameters that will be passed as symbols as well
-    syms R_leg R_ankle c m k i_motor transmission lf transmission_ankle g disturbance_f apex_velocity deltav dthetaMax xDist baseline_TDA TD_disturb LockTDA real
-    v = [m c k g i_motor transmission transmission_ankle lf ...
-                R_leg R_ankle disturbance_f apex_velocity deltav dthetaMax xDist baseline_TDA TD_disturb LockTDA]';
-    v_list = [30 10 2000 10 .00005 80 50 .15 1 1 1 3 3 1 1 3 .5 1.8 .1 1]'; %Example parameter list
+%     %Make the parameters that will be passed as symbols as well
+%     syms R_leg R_ankle c m k i_motor transmission lf transmission_ankle g disturbance_f apex_velocity deltav dthetaMax xDist baseline_TDA TD_disturb LockTDA real
+%     v = [m c k g i_motor transmission transmission_ankle lf ...
+%                 R_leg R_ankle disturbance_f apex_velocity deltav dthetaMax xDist baseline_TDA TD_disturb LockTDA]';
+%     v_list = [30 10 2000 10 .00005 80 50 .15 1 1 1 3 3 1 1 3 .5 1.8 .1 1]'; %Example parameter list
 
+    
+    [v, v_list] = collParameters(0);
+    
     %Let Psymparam inheirit properties of CollocationParameters
     PsymStruc = CollocationParameters;
     PsymStrucEX = CollocationParameters;
