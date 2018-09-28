@@ -94,9 +94,9 @@ function [ c, ceq] = CONST( dv, Parameters )
     eqCon(end+1) = Parameters.LockTDA .*...
     (atan2(y(1),x(1)) - (Parameters.baseline_TDA + Parameters.TD_disturb));
 
-    eqCon = reshape(eqCon, [numel(eqCon),1]);
+    eqCon = resize(eqCon, [numel(eqCon),1]
     %Concatenate collocation constraints and other constraints
-    ceq = [ceq; eqCon];
+    ceq = [ceq, eqCon'];
 
     %Inequality constraints
     %Ankle torque bounds

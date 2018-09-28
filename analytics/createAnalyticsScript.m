@@ -3,10 +3,10 @@ clear; close all; clc;
 tic
 
 %Setup
-makefile = 0; makehessian = 0; optimize = 0;
+makefile = 1; makehessian = 0; optimize = 1;
 assert(optimize == 0 || optimize == 1, 'optimize needs to be 0 or 1')
 
-dirname = 'NewOptimizationStructureApexApex2';
+dirname = 'ApexV_ApexH';
 currdir = [pwd filesep];
 if makefile == 1
     %Make folder that new dynamics are going into
@@ -87,28 +87,28 @@ assert(oldObj-newObj < 1e-10, 'Error in analytical objective func is too high');
 
 %Linear equality constraints - state at beginning is same as end translated
 %in x!
-rowLen = p.dof*2 + p.cntrl_dof;
-Aeq = zeros(rowLen, size(dv,1));
-for i = 2:rowLen
-    Aeq(i,1+(p.N-1)*(i-1)) = 1; %state(1) = 1
-    Aeq(i,(p.N-1)*(i)) = -1; %state(end) = -1
-end
-Aeq = Aeq(2:end,:);
-beq = zeros(rowLen-1,1);
-%Save linear equality constraints
-if makefile == 1
-    save([currdir,dirname,'\', 'Aeq_array'],'Aeq');
-    save([currdir,dirname,'\', 'beq_array'],'beq');
-end
-
-%Linear inequality constraints
-%Min distance
-A = zeros(1,length(dv));
-A(1) = 1; A(p.N-1) = -1;
-% b = 1; %Change me later
-if makefile == 1
-    save([currdir,dirname,'\','A_array'],'A');
-end
+% rowLen = p.dof*2 + p.cntrl_dof;
+% Aeq = zeros(rowLen, size(dv,1));
+% for i = 2:rowLen
+%     Aeq(i,1+(p.N-1)*(i-1)) = 1; %state(1) = 1
+%     Aeq(i,(p.N-1)*(i)) = -1; %state(end) = -1
+% end
+% Aeq = Aeq(2:end,:);
+% beq = zeros(rowLen-1,1);
+% %Save linear equality constraints
+% if makefile == 1
+%     save([currdir,dirname,'\', 'Aeq_array'],'Aeq');
+%     save([currdir,dirname,'\', 'beq_array'],'beq');
+% end
+% 
+% %Linear inequality constraints
+% %Min distance
+% A = zeros(1,length(dv));
+% A(1) = 1; A(p.N-1) = -1;
+% % b = 1; %Change me later
+% if makefile == 1
+%     save([currdir,dirname,'\','A_array'],'A');
+% end
 
 %Non-linear constraints
 %Get symbolic constraints
