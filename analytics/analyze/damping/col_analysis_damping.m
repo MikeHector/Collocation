@@ -12,16 +12,16 @@ end
 % {'c', 'apex_velocity', 'disturance_f', 'TD_disturb', 'deltav', 'deltah'}
 varName = 'c';
 varInd = 2;
-varmaxplot = 150;
+varmaxplot = 240;
 varminplot = -1;
-energyMax = 150;
+energyMax = .25;
 plotName = 'Damping';
 cf = pwd; %Path stuff
 dirComp = getSaveDir('DRL-PC'); %Change if you're running on a different computer
 
 % dirComp = 'C:\Users\mike-\Google Drive\Collocation\damping_highLegE_lowAnkleE';
 
-dirname = strcat(dirComp, '\opt_', varName, '*');
+dirname = strcat(dirComp, '\opt_', varName, '_Ankle_*');
 % dirname = strcat(dirComp, 'BaselineDampingN*');
 strucc = dir(dirname);
 fig = figure;
@@ -53,6 +53,7 @@ for i = 1:length(strucc)
     varr(i) = opt.param(varInd);
     if varr(i) == 40
 %         pause
+            1+1;
     end
 end
 [var_sorted,i] = sort(varr);
@@ -79,16 +80,17 @@ while results_sorted_var{i}.param(varInd) < varmaxplot
         time = results_sorted_var{i}.t / results_sorted_var{i}.t(end);
         leg_response = results_sorted_var{i}.Tleg;
         ankle_response = results_sorted_var{i}.Tankle;
-%         xyTraj = getXYplot(results_sorted_var{i},0);
-%         x = real(xyTraj.x);
-%         y = real(xyTraj.y);
         r = results_sorted_var{i}.r;
         k = results_sorted_var{i}.param(3);
         m = results_sorted_var{i}.param(1);
         c = results_sorted_var{i}.param(2);
-        transmission_ankle = results_sorted_var{i}.param(7);
-        xcop = (ankle_response * transmission_ankle)...
-            .* r ./(k .*(results_sorted_var{i}.r0 -r).* results_sorted_var{i}.y);
+        transmission_ankle = results_sorted_var{i}.param(9);
+        dr = (results_sorted_var{i}.x .* results_sorted_var{i}.dx +...
+             results_sorted_var{i}.y .* results_sorted_var{i}.dy)./r;
+        Fs = k*(results_sorted_var{i}.r0 - results_sorted_var{i}.r) +...
+             c*(results_sorted_var{i}.dr0 - dr);
+        xcop = ankle_response .* transmission_ankle .*...
+               results_sorted_var{i}.r ./(Fs .* results_sorted_var{i}.y);
         zeta = c/ (2 * sqrt(k * m));
         ankleF = transmission_ankle * ankle_response .*...
         (results_sorted_var{i}.x .* results_sorted_var{i}.dy -...
@@ -96,6 +98,13 @@ while results_sorted_var{i}.param(varInd) < varmaxplot
         ankleFStance = ankleF(1:results_sorted_var{i}.collParam.Nstance);
         thetaCycle = [atan2(results_sorted_var{i}.y(1:results_sorted_var{i}.collParam.Nstance), results_sorted_var{i}.x(1:results_sorted_var{i}.collParam.Nstance)); results_sorted_var{i}.theta(2:end)];
         thetaNorm = linspace(0,1,length(thetaCycle(1:results_sorted_var{i}.collParam.Nstance)));
+        mgd = m * results_sorted_var{i}.param(10) * (results_sorted_var{i}.x(end) - results_sorted_var{i}.x(1));
+        Tcycle = results_sorted_var{i}.Tstance + results_sorted_var{i}.Tflight;
+        Tflight = results_sorted_var{i}.Tflight;
+        disp(['Energy of cycle is '...
+            num2str(results_sorted_var{i}.cost * mgd), ' J'...
+            ' Cycle Time = ' num2str(Tcycle), ' seconds',...
+            ' Flight Time = ' num2str(Tflight), ' seconds']);
         
         
         if max(leg_response) > 12

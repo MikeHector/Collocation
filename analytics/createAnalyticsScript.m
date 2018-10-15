@@ -2,11 +2,12 @@
 clear; close all; clc;
 tic
 
+
 %Setup
 makefile = 1; makehessian = 0; optimize = 1;
 assert(optimize == 0 || optimize == 1, 'optimize needs to be 0 or 1')
 
-dirname = 'ApexV_ApexH';
+dirname = 'complex10_COT';
 currdir = [pwd filesep];
 if makefile == 1
     %Make folder that new dynamics are going into
@@ -28,12 +29,12 @@ p.Nflight = 20;
 p.dof = 3;
 p.cntrl_dof = 2;
 smooth = 3;
-
 assert(p.N == p.Nstance+p.Nflight,'stance and flight must add to N')
+C = includeConstraint(1);
 
 % Setup
 disp('Making symbols')
-[dv, vStruc, vList, Example] = makeParamSym(p);
+[dv, vStruc, vList, Example] = makeParamSym(p, C);
 disp('Done')
 
 %Turn it into dv block and p structure
@@ -85,35 +86,39 @@ assert(oldObj-newObj < 1e-10, 'Error in analytical objective func is too high');
 
 % Constraints
 
-%Linear equality constraints - state at beginning is same as end translated
-%in x!
-% rowLen = p.dof*2 + p.cntrl_dof;
-% Aeq = zeros(rowLen, size(dv,1));
-% for i = 2:rowLen
-%     Aeq(i,1+(p.N-1)*(i-1)) = 1; %state(1) = 1
-%     Aeq(i,(p.N-1)*(i)) = -1; %state(end) = -1
+% Linear equality constraints - state at beginning is same as end translated
+% in x!
+% if C.matchState == 1 -- implemented in CONST as nonlin constraint
+%     rowLen = p.dof*2 + p.cntrl_dof;
+%     Aeq = zeros(rowLen, size(dv,1));
+%     for i = 2:rowLen
+%         Aeq(i,1+(p.N-1)*(i-1)) = 1; %state(1) = 1
+%         Aeq(i,(p.N-1)*(i)) = -1; %state(end) = -1
+%     end
+%     Aeq = Aeq(2:end,:);
+%     beq = zeros(rowLen-1,1);
+%     %Save linear equality constraints
+%     if makefile == 1
+%         save([currdir,dirname,'\', 'Aeq_array'],'Aeq');
+%         save([currdir,dirname,'\', 'beq_array'],'beq');
+%     end
 % end
-% Aeq = Aeq(2:end,:);
-% beq = zeros(rowLen-1,1);
-% %Save linear equality constraints
-% if makefile == 1
-%     save([currdir,dirname,'\', 'Aeq_array'],'Aeq');
-%     save([currdir,dirname,'\', 'beq_array'],'beq');
-% end
-% 
-% %Linear inequality constraints
-% %Min distance
-% A = zeros(1,length(dv));
-% A(1) = 1; A(p.N-1) = -1;
-% % b = 1; %Change me later
-% if makefile == 1
-%     save([currdir,dirname,'\','A_array'],'A');
+
+%Linear inequality constraints
+% if C.minDist == 1 -- implemented in CONST as nonlin constraint
+%     %Min distance
+%     A = zeros(1,length(dv));
+%     A(1) = 1; A(p.N-1) = -1;
+%     % b = 1; %Change me later
+%     if makefile == 1
+%         save([currdir,dirname,'\','A_array'],'A');
+%     end
 % end
 
 %Non-linear constraints
 %Get symbolic constraints
 disp('Fetching symbolic constraints')
-[c_ineq, c_eq] = CONST(dvBlock,vStruc);
+[c_ineq, c_eq] = CONST(dvBlock,vStruc, C);
 disp('Done')
 
 
@@ -135,7 +140,7 @@ if makefile == 1
 end
 
 %Check Constraint function
-[oldc, oldceq] = CONST(Example.dvNum, Example.vNum);
+[oldc, oldceq] = CONST(Example.dvNum, Example.vNum, C);
 newcineq = c_ineq_func(Example.dvSym, Example.vSymList);
 newceq = c_eq_func(Example.dvSym, Example.vSymList);
 
@@ -215,9 +220,6 @@ end
 
 makeNewSaveStruc(p,Example,currdir,dirname);
 
-time2gen = toc;
-disp(['It took ' num2str(time2gen/3600), ' hours to generate analytics'])
-
 %Put RUN_COL and MAIN_COL in target dir
 copyfile('RUN_COL.m',dirname)
 copyfile('MAIN_COL.m',dirname)
@@ -225,7 +227,7 @@ copyfile('FIND_SEED.m',dirname)
 
 %check gradients
 try
-    checkGradients(opt.X, opt.param, opt.collParam )
+    checkGradients(Example.dvSym, Example.vSymList, Example.vNum )
 catch
     disp('If any gradient difference is larger than 1e-3, inspect')
     disp('Small differences are expected as analytics are different than finite diff')
@@ -234,3 +236,6 @@ end
 disp('If any gradient difference is larger than 1e-3, inspect')
 disp('Small differences are expected as analytics are different than finite diff')
 rmpath(dirname)
+
+time2gen = toc;
+disp(['It took ' num2str(time2gen/3600), ' hours to generate analytics'])

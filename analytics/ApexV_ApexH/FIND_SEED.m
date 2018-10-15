@@ -6,7 +6,7 @@
 %solution as a seed for the next optimization
 clear; clc;
 
-filename = 'seedC_TD';
+filename = 'seedMatchFreeAnkleBigFoot';
 load(filename)
 opt_seed = opt.X;
 param = opt.param;  
@@ -14,7 +14,7 @@ collParam = opt.collParam;
 seeParam = opt.seeParam;
 
 iterationCounter = 0;
-lowest_cost = opt.cost+1000;
+lowest_cost = opt.cost+10;
 goodCounter = 0;
 
 while iterationCounter < 20000

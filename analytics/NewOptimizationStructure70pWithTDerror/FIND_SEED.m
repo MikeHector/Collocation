@@ -14,7 +14,7 @@ collParam = opt.collParam;
 seeParam = opt.seeParam;
 
 iterationCounter = 0;
-lowest_cost = opt.cost+1000;
+lowest_cost = opt.cost-5;
 goodCounter = 0;
 
 while iterationCounter < 20000

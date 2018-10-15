@@ -1,14 +1,25 @@
-function [dv, PsymStruc, v, Example] = makeParamSym(CollocationParameters)
+function [dv, PsymStruc, v, Example] = makeParamSym(CollocationParameters, C)
 %makeParamSym Make inputs for creating analytical derivatives, comparing
 %them
 
-    %Make the decision variable symbols as a long list
-    numberOfDV = (2* CollocationParameters.dof +...
-        CollocationParameters.cntrl_dof) * (CollocationParameters.N -1) +...
-        CollocationParameters.Nflight + 3; %state+control for whole traj; theta for flight; apexheight, Tstance, Tflight
-    dv = sym('x', [1 numberOfDV], 'real')'; %all my decision vars (one hop with flight)
-%     x1 = x(1)... x79 = x(79); x80 = y(1)...theta... Tstance, Tflight,
-%     apexheight
+    if C.flightCollocation == 1
+        %Make the decision variable symbols as a long list
+        numberOfDV = (2* CollocationParameters.dof +...
+            CollocationParameters.cntrl_dof) * (CollocationParameters.N -1) +...
+            CollocationParameters.Nflight + 3; %state+control for whole traj; theta for flight; apexheight, Tstance, Tflight
+        dv = sym('x', [1 numberOfDV], 'real')'; %all my decision vars (one hop with flight)
+    %     x1 = x(1)... x79 = x(79); x80 = y(1)...theta... Tstance, Tflight,
+    %     apexheight
+
+    elseif C.flightCollocation == 0
+        %Make the decision variable symbols as a long list
+        numberOfDV = (2* CollocationParameters.dof +...
+            CollocationParameters.cntrl_dof) * (CollocationParameters.N) +...
+            + 3; %state+control for whole traj; apexheight, Tstance, Tflight
+        dv = sym('x', [1 numberOfDV], 'real')'; %all my decision vars (one hop with flight)
+    %     x1 = x(1)... x79 = x(79); x80 = y(1)... Tstance, Tflight,
+    %     apexheight
+    end
 
 %     %Make the parameters that will be passed as symbols as well
 %     syms R_leg R_ankle c m k i_motor transmission lf transmission_ankle g disturbance_f apex_velocity deltav dthetaMax xDist baseline_TDA TD_disturb LockTDA real
@@ -17,7 +28,7 @@ function [dv, PsymStruc, v, Example] = makeParamSym(CollocationParameters)
 %     v_list = [30 10 2000 10 .00005 80 50 .15 1 1 1 3 3 1 1 3 .5 1.8 .1 1]'; %Example parameter list
 
     
-    [v, v_list] = collParameters(0);
+    [v, v_list] = collParameters(0, C);
     
     %Let Psymparam inheirit properties of CollocationParameters
     PsymStruc = CollocationParameters;

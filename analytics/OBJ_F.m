@@ -11,6 +11,7 @@ function [ cost ] = OBJ_F( DecisionVariables, Parameters, smooth )
     R_leg = Parameters.R_leg;
     R_ankle = Parameters.R_ankle;
     maxXzero = MikeMax(smooth);
+    abSmooth = @(x) sqrt(x.^2 + .001.^2) - .001;
     for i = 1:size(DecisionVariables,2)
         cost_leg = cost_leg + ...
             R_leg * u(1, i)^2 * hk(i) +... %electrical
@@ -20,5 +21,6 @@ function [ cost ] = OBJ_F( DecisionVariables, Parameters, smooth )
             maxXzero(u(2, i) * Parameters.transmission_ankle *...
             (DecisionVariables(1,i) * DecisionVariables(5,i) - DecisionVariables(2,i) * DecisionVariables(4,i)) / (r(i)^2)  * hk(i)); %mechanical
     end
-    cost = cost_leg + cost_ankle;
+    cost = (cost_leg + cost_ankle) ...
+    ./ (Parameters.m * Parameters.g * abSmooth(DecisionVariables(1,end) - DecisionVariables(1,1))); %COT
 end
