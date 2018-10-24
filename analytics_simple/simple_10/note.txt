@@ -1,0 +1,6 @@
+Smoothing function epsilon .001
+Number of knots 30
+noAnkle1 - contTol 1e-6 optTol 1e-6
+noAnkle2 - contTol 1e-9 optTol 1e-9
+noAnkle3 - turned on ddr0 bounds
+obj func |Fv|

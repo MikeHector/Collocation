@@ -4,7 +4,7 @@
 clc; clear; close all
 record_video = 0;
 if record_video==1
-    v=VideoWriter('Damping','MPEG-4');
+    v=VideoWriter('Damping2','MPEG-4');
     v.FrameRate=10;
     open(v);
 end

@@ -14,14 +14,14 @@ varName = 'c';
 varInd = 2;
 varmaxplot = 240;
 varminplot = -1;
-energyMax = 150;
+energyMax = .25;
 plotName = 'Damping';
 cf = pwd; %Path stuff
 dirComp = getSaveDir('DRL-PC'); %Change if you're running on a different computer
 
 % dirComp = 'C:\Users\mike-\Google Drive\Collocation\damping_highLegE_lowAnkleE';
 
-dirname = strcat(dirComp, '\opt_', varName, '_Ankle_91*');
+dirname = strcat(dirComp, '\opt_', varName, '_Ankle*');
 % dirname = strcat(dirComp, 'BaselineDampingN*');
 strucc = dir(dirname);
 fig = figure;

@@ -1,0 +1,5 @@
+THIS ONE HAS ANKLE CONSTRAINTS!
+Smoothing function epsilon .001
+Number of knots 30
+obj func = int(|Fv| + RTm^2)
+More direct xcop constraint

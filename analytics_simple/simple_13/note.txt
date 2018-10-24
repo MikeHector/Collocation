@@ -1,0 +1,4 @@
+Smoothing function epsilon .000001
+Number of knots 30
+obj func = int(|Fv| +F^2)
+no ankle constraints

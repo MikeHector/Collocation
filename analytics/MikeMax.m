@@ -17,7 +17,7 @@ switch in
         
     otherwise
         pause
-        disp('I need an input between 0 and 2');
+        disp('I need an input between 0 and 3');
 
 end
 

@@ -1,0 +1,4 @@
+Simple 16
+Smoothing function epsilon .001
+Number of knots 30
+obj func = int(abs(F*v))

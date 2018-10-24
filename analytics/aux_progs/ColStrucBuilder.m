@@ -18,12 +18,12 @@ colls = colls + colls1;
 clear colStruc
 
 %Changing Average Apex Velocity
-colStruc.direction = {'up'};
+colStruc.direction = {'down','up'};
 colStruc.varName = 'apex_velocity';
 colStruc.deltaVar = .025;
 colStruc.varMax = 5;
 colStruc.varMin = .2;
-colStruc.var = 3;
+colStruc.var = 1;
 colStruc.varInd = 13;
 ColStrucArray.ApexVelocity = colStruc;
 colls2 = (abs(colStruc.varMax) + abs(colStruc.varMin))/colStruc.deltaVar;

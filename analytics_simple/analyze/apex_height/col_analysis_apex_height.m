@@ -4,24 +4,24 @@
 clc; clear; close all
 record_video = 0;
 if record_video==1
-    v=VideoWriter('Damping','MPEG-4');
-    v.FrameRate=10;
+    v=VideoWriter('Apex_velocity','MPEG-4');
+    v.FrameRate=5;
     open(v);
 end
 
 % {'c', 'apex_velocity', 'disturance_f', 'TD_disturb', 'deltav', 'deltah'}
-varName = 'c';
-varInd = 2;
-varmaxplot = 240;
-varminplot = -1;
-energyMax = .25;
-plotName = 'Damping';
+varName = 'apex_height';
+varInd = 12;
+varmaxplot = 1.36;
+varminplot = .5;
+energyMax = .7;
+plotName = 'Apex Height';
 cf = pwd; %Path stuff
 dirComp = getSaveDir('DRL-PC'); %Change if you're running on a different computer
 
 % dirComp = 'C:\Users\mike-\Google Drive\Collocation\damping_highLegE_lowAnkleE';
 
-dirname = strcat(dirComp, '\opt_', varName, '_Ankle_*');
+dirname = strcat(dirComp, '\opt_', varName, '_simpleN*');
 % dirname = strcat(dirComp, 'BaselineDampingN*');
 strucc = dir(dirname);
 fig = figure;
@@ -29,21 +29,20 @@ hold on
 subplot(2,2,1); an1 = plot(1,1); hold on; an12 = plot([0 1], 'bo');
 axis([0,1, 0, 1.5]); title('Y Height Through Cycle'); xlabel('Normalized Time'); ylabel('Y Displacement');
 subplot(2,2,2); an2 = plot(1,1); hold on; an22 = plot(2,2);
-axis([0, 1, -13, 13]); title('Torque Trajectory'); xlabel('Normalized Time'); ylabel('Torque'); legend('Ankle torque', 'Leg torque', 'Location', 'southwest')
-TLmax = refline(0, 12.2); TLmax.Color = [0.8500 0.3250 0.0980]; TLmax.LineStyle = '--'; TLmax.HandleVisibility = 'off';
-TLmin = refline(0, -12.2); TLmin.Color = [0.8500 0.3250 0.0980]; TLmin.LineStyle = '--'; TLmin.HandleVisibility = 'off';
-TAmax = refline(0, 4.5); TAmax.Color = 'b'; TAmax.LineStyle = '--'; TAmax.HandleVisibility = 'off';
-TAmin = refline(0, -4.5); TAmin.Color = 'b'; TAmin.LineStyle = '--'; TAmin.HandleVisibility = 'off';
+axis([0, 1, -5.1, 5.1]); title('Force Trajectory'); xlabel('Normalized Time'); ylabel('Force'); legend('Ankle Force', 'Leg Force', 'Location', 'southwest')
+TLmax = refline(0, 5); TLmax.Color = [0.8500 0.3250 0.0980]; TLmax.LineStyle = '--'; TLmax.HandleVisibility = 'off';
+TLmin = refline(0, -5); TLmin.Color = [0.8500 0.3250 0.0980]; TLmin.LineStyle = '--'; TLmin.HandleVisibility = 'off';
+TAmax = refline(0, 2); TAmax.Color = 'b'; TAmax.LineStyle = '--'; TAmax.HandleVisibility = 'off';
+TAmin = refline(0, -2); TAmin.Color = 'b'; TAmin.LineStyle = '--'; TAmin.HandleVisibility = 'off';
 
 subplot(2,2,3); an3 = plot(1,1,'ro'); hold on; an32 = plot(2,2);
 axis([varminplot,varmaxplot, 0, energyMax]); xlabel(plotName); ylabel('Cost');
 title1 = title('wut');
 subplot(2,2,4); an4 = plot(1,1);
-axis([0,1, -.2, .2]); xlabel('Normalized Time of Stance'); ylabel('Center of Pressure Position')
+axis([0,1, -.07, .07]); xlabel('Normalized Time of Stance'); ylabel('Center of Pressure Position')
 COPmax = refline(0, .15/2); COPmax.Color = 'b'; COPmax.LineStyle = '--'; COPmax.HandleVisibility = 'off';
 COPmin = refline(0, -.15/2); COPmin.Color = 'b'; COPmin.LineStyle = '--'; COPmin.HandleVisibility = 'off';
 title('Center of Pressure Profile Through Stance')
-
 
 for i = 1:length(strucc)
     filename = strucc(i).name;
@@ -51,9 +50,9 @@ for i = 1:length(strucc)
     load(filename)
     results{i} = opt;
     varr(i) = opt.param(varInd);
-    if varr(i) == 40
+    if round(varr(i),3) == 1.33
 %         pause
-1+1;
+        1+1;
     end
 end
 [var_sorted,i] = sort(varr);
@@ -77,72 +76,67 @@ i = 1;
 while results_sorted_var{i}.param(varInd) < varmaxplot
     
    if results_sorted_var{i}.collParam.flag > 0
+        full = stance2Full(results_sorted_var{i});
         time = results_sorted_var{i}.t / results_sorted_var{i}.t(end);
-        leg_response = results_sorted_var{i}.Tleg;
+        leg_response = results_sorted_var{i}.Fleg;
         ankle_response = results_sorted_var{i}.Tankle;
+%         xyTraj = getXYplot(results_sorted_var{i},0);
+%         x = real(xyTraj.x);
+%         y = real(xyTraj.y);
         r = results_sorted_var{i}.r;
         k = results_sorted_var{i}.param(3);
         m = results_sorted_var{i}.param(1);
         c = results_sorted_var{i}.param(2);
-        transmission_ankle = results_sorted_var{i}.param(9);
+        transmission_ankle = results_sorted_var{i}.param(7);
         dr = (results_sorted_var{i}.x .* results_sorted_var{i}.dx +...
-             results_sorted_var{i}.y .* results_sorted_var{i}.dy)./r;
-        Fs = k*(results_sorted_var{i}.r0 - results_sorted_var{i}.r) +...
-             c*(results_sorted_var{i}.dr0 - dr);
-        xcop = ankle_response .* transmission_ankle .*...
-               results_sorted_var{i}.r ./(Fs .* results_sorted_var{i}.y);
+            results_sorted_var{i}.y .* results_sorted_var{i}.dy)./ r;
+        Fleg = results_sorted_var{i}.Fleg;
+        xcop = results_sorted_var{i}.xcop;
         zeta = c/ (2 * sqrt(k * m));
-        ankleF = transmission_ankle * ankle_response .*...
-        (results_sorted_var{i}.x .* results_sorted_var{i}.dy -...
-        results_sorted_var{i}.y .* results_sorted_var{i}.dx) ./ results_sorted_var{i}.r.^2;
-        ankleFStance = ankleF(1:results_sorted_var{i}.collParam.Nstance);
-        thetaCycle = [atan2(results_sorted_var{i}.y(1:results_sorted_var{i}.collParam.Nstance), results_sorted_var{i}.x(1:results_sorted_var{i}.collParam.Nstance)); results_sorted_var{i}.theta(2:end)];
-        thetaNorm = linspace(0,1,length(thetaCycle(1:results_sorted_var{i}.collParam.Nstance)));
-        mgd = m * results_sorted_var{i}.param(10) * (results_sorted_var{i}.x(end) - results_sorted_var{i}.x(1));
-        Tcycle = results_sorted_var{i}.Tstance + results_sorted_var{i}.Tflight;
-        disp(['Energy of cycle is '...
-            num2str(results_sorted_var{i}.cost * mgd), ' J'...
-            ' Cycle Time = ' num2str(Tcycle), ' seconds'])
+        Fankle =results_sorted_var{i}.Fankle;
+%         ankleFStance = ankleF(1:results_sorted_var{i}.collParam.Nstance);
+%         thetaCycle = [atan2(results_sorted_var{i}.y(1:results_sorted_var{i}.collParam.Nstance), results_sorted_var{i}.x(1:results_sorted_var{i}.collParam.Nstance)); results_sorted_var{i}.theta(2:end)];
+%         thetaNorm = linspace(0,1,length(thetaCycle(1:results_sorted_var{i}.collParam.Nstance)));
+        [beginEnd, inOut] = energyInOut(results_sorted_var{i},0);
+        disp(num2str(beginEnd));
+        disp(num2str(inOut));
+        results_sorted_var{i}.collParam.fmincon_stuff.firstorderopt
         
         
         if max(leg_response) > 12
 %             pause
         end
 
-        an1.XData = results_sorted_var{i}.t/results_sorted_var{i}.t(end);
-        an1.YData = results_sorted_var{i}.y;
+        an1.XData = full.t./full.t(end);
+        an1.YData = full.y;
         
-        an12.XData = results_sorted_var{i}.t(results_sorted_var{i}.t==results_sorted_var{i}.Tstance)/ results_sorted_var{i}.t(end);
-        an12.YData = results_sorted_var{i}.y(results_sorted_var{i}.t==results_sorted_var{i}.Tstance);
+%         an12.XData = results_sorted_var{i}.t(results_sorted_var{i}.t==results_sorted_var{i}.Tstance)/ results_sorted_var{i}.t(end);
+%         an12.YData = results_sorted_var{i}.y(results_sorted_var{i}.t==results_sorted_var{i}.Tstance);
          
 %         an12.XData = time;
 %         an12.YData = [results_sorted_var{i}.y(1), results_sorted_var{i}.y(end)];
 
         an2.XData = time;
-        an2.YData = ankle_response;  
+        an2.YData = Fankle;  
         
         an22.XData = time;
-        an22.YData = leg_response; 
+        an22.YData = Fleg; 
         
         an3.XData = results_sorted_var{i}.param(varInd);
         an3.YData = results_sorted_var{i}.cost;
         
-%         an4.XData = time(1:results_sorted_var{i}.collParam.Nstance)/time(results_sorted_var{i}.collParam.Nstance);
-%         an4.YData = ankleF(1:results_sorted_var{i}.collParam.Nstance);
-        an4.XData = time(1:results_sorted_var{i}.collParam.Nstance)/time(results_sorted_var{i}.collParam.Nstance);
-        an4.YData = xcop(1:results_sorted_var{i}.collParam.Nstance);
+%         an4.XData = thetaNorm;
+        an4.XData = time;
+        an4.YData = xcop;
 
 %         an4.XData = thetaNorm;
 %         an4.YData = ankleFStance;
-
-%         an4.XData = thetaNorm;
-%         an4.YData = xcop(1:results_sorted_var{i}.collParam.Nstance);
         
 %         xdist = results_sorted_var{i}.x(end)-results_sorted_var{i}.x(1)
 
         drawnow
-        title1.String = ['Energy Required when \zeta = ', num2str(zeta,2)];
-        pause(.005)
+        title1.String = ['Energy Required when Apex Velocity = ', num2str(results_sorted_var{i}.param(varInd))];
+        pause(.1)
         if record_video==1
             F=getframe(gcf);
             writeVideo(v,F);

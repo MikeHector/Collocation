@@ -1,0 +1,2 @@
+Smoothing function epsilon .001
+Number of knots 50

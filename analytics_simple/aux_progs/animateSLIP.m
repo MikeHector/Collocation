@@ -13,8 +13,7 @@ function [ ] = animateSLIP(opt_results, record_video)
     transmission = s.param(strcmp(s.collParam.modelParamList, 'transmission'));
     transmission_ankle = s.param(strcmp(s.collParam.modelParamList, 'transmission_ankle'));
     lf = s.param(strcmp(s.collParam.modelParamList, 'lf'));
-    Fs = k * (s.r0 - s.r);
-    xcop = s.Tankle * transmission_ankle .* s.r ./ (Fs .* s.y);
+    xcop = opt_results.xcop;
     leg_angle = atan2(s.y,s.x) - pi/2;
     
     %X Y Animation
@@ -47,8 +46,7 @@ function [ ] = animateSLIP(opt_results, record_video)
     figure(slipbodyanimate)
     ax11 = subplot(4,4,13);
     ankleFplot = plot(0,0);
-    ankleF = transmission_ankle * s.Tankle .*...
-        (s.x .* s.dy - s.y .* s.dx) ./ s.r.^2;
+    ankleF = opt_results.Fankle;
     ax11.XLim = [min(s.t), max(s.t)];
     ax11.YLim = [min(ankleF)-.1, max(ankleF)+.1];
     title('Ankle Force on COM')
@@ -110,26 +108,19 @@ function [ ] = animateSLIP(opt_results, record_video)
     ax6 = subplot(4,4, [11,12,15,16]);
     leg_torque_plot = plot(0,0);
     ax6.XLim = [min(s.t), max(s.t)];
-    ax6.YLim = [min(s.Tleg), max(s.Tleg)];
-    title('Leg torque trajectory')
+    ax6.YLim = [min(s.Fleg), max(s.Fleg)];
+    title('Leg Force trajectory')
 
 
     for q = 1:2 %Number of times to play
         for i = 1:length(s.x)
             %Body animation stuff
-            if i <= s.collParam.Nstance
-                %Repatch the spring line
-                h(2).Vertices(3:4,2) = -(s.r(i) + 0);
-                %HG transform stuff
-                Tx = makehgtform('translate',[s.x(i),s.y(i),0],'zrotate',leg_angle(i));
-                set(tf, 'Matrix', Tx)
-            elseif i > s.collParam.Nstance
-                %Repatch the spring line
-                h(2).Vertices(3:4,2) = -(s.r0(i) + 0);
-                %HG transform stuff
-                Tx = makehgtform('translate',[s.x(i),s.y(i),0],'zrotate',s.theta(i-s.collParam.Nstance)-pi/2);
-                set(tf, 'Matrix', Tx)
-            end
+
+            %Repatch the spring line
+            h(2).Vertices(3:4,2) = -(s.r(i) + 0);
+            %HG transform stuff
+            Tx = makehgtform('translate',[s.x(i),s.y(i),0],'zrotate',leg_angle(i));
+            set(tf, 'Matrix', Tx)
 
 
             %COP animation
@@ -153,7 +144,7 @@ function [ ] = animateSLIP(opt_results, record_video)
 
             %Leg torque plot
             leg_torque_plot.XData = s.t(1:i);
-            leg_torque_plot.YData = s.Tleg(1:i);
+            leg_torque_plot.YData = s.Fleg(1:i);
 
             drawnow
             pause(.2)

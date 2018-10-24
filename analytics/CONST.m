@@ -50,7 +50,7 @@ function [ c, ceq] = CONST( dv, Parameters, C)
     
     if C.touchdownEnergy == 1
     %y - velocity + position. energy approach
-        eqCon(end+1) = .5 * dy(1)^2 - Parameters.g * (Parameters.apex_height - y(1));
+        eqCon = .5 * dy(1)^2 - Parameters.g * (Parameters.apex_height - y(1));
     end
     
     if C.xVelTD == 1

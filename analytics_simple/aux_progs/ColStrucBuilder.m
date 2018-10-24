@@ -5,12 +5,12 @@
 function [ColStrucArray] = ColStrucBuilder()
 colls = 0;
 %Damping
-colStruc.direction = {'up'};
+colStruc.direction = {'up','down'};
 colStruc.varName = 'c';
-colStruc.deltaVar = 1;
-colStruc.varMax = 243;
-colStruc.varMin = -1;
-colStruc.var = 0; %Initial variable value
+colStruc.deltaVar = .01;
+colStruc.varMax = 1.5;
+colStruc.varMin = -.001;
+colStruc.var = .5; %Initial variable value
 colStruc.varInd = 2;
 ColStrucArray.Damping = colStruc;
 colls1 = (abs(colStruc.varMax) + abs(colStruc.varMin))/colStruc.deltaVar;
@@ -28,6 +28,19 @@ colStruc.varInd = 13;
 ColStrucArray.ApexVelocity = colStruc;
 colls2 = (abs(colStruc.varMax) + abs(colStruc.varMin))/colStruc.deltaVar;
 colls = colls + colls2;
+clear colStruc
+
+%Changing Average Apex Height
+colStruc.direction = {'up','down'};
+colStruc.varName = 'apex_height';
+colStruc.deltaVar = .002;
+colStruc.varMax = 1.5;
+colStruc.varMin = .5;
+colStruc.var = 1;
+colStruc.varInd = 12;
+ColStrucArray.ApexHeight = colStruc;
+colls3 = (abs(colStruc.varMax - colStruc.varMin))/colStruc.deltaVar;
+colls = colls + colls3;
 clear colStruc
 
 %Changing Force Disturbance

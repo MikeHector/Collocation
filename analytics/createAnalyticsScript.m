@@ -7,7 +7,8 @@ tic
 makefile = 1; makehessian = 0; optimize = 1;
 assert(optimize == 0 || optimize == 1, 'optimize needs to be 0 or 1')
 
-dirname = 'complex10_COT';
+constraintNumber = 9;
+dirname = 'complex12_COT_dr0';
 currdir = [pwd filesep];
 if makefile == 1
     %Make folder that new dynamics are going into
@@ -30,7 +31,7 @@ p.dof = 3;
 p.cntrl_dof = 2;
 smooth = 3;
 assert(p.N == p.Nstance+p.Nflight,'stance and flight must add to N')
-C = includeConstraint(1);
+C = includeConstraint(constraintNumber);
 
 % Setup
 disp('Making symbols')

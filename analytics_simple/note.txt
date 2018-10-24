@@ -1,0 +1,4 @@
+Simple 16
+Smoothing function epsilon .001
+Number of knots 50
+obj func = int(max(0,F*v))

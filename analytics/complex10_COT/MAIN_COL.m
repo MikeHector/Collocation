@@ -26,7 +26,7 @@ for m = [2]
         direction = colStruc.direction{k};
 
         %Load baseline seed and parameters
-        load('ankle3mps.mat')
+        load('noAnkle.mat')
 %         load('C:\Users\mike-\Documents\DRL\slip_opt\opt_results\opt_disturbance_f_180820182234015610.mat')
 %         load( 'C:\Users\mike-\Documents\DRL\collocation\opt_results\opt_R_leg_150820181810270730.mat')
         opt_seed = opt.X;
@@ -42,7 +42,6 @@ for m = [2]
             opt.collParam.flag = 0;
             while tryCounter <= NumPerturb && opt.collParam.flag <= 0
                 [DV_out, opt] = RUN_COL(opt_seed, param, collParam, seeParam); %softmax
-                opt.collParam.flag = 1;
                 
                 %Perturb if it hasn't converged
                 if opt.collParam.flag == 0 && tryCounter < NumPerturb
@@ -54,7 +53,7 @@ for m = [2]
 
             %Save the coll
             uniqueID = string(datetime, 'dMMyHHmmssSSSS');
-            filename = strcat('opt_', colStruc.varName, '_Ankle_', uniqueID);
+            filename = strcat('opt_', colStruc.varName, '_noAnkleCOT_', uniqueID);
             save(strcat(saveDir,'\',filename),'opt');
 
             %Save optimized decision variables as new seed

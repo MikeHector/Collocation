@@ -5,8 +5,8 @@ function [dv, PsymStruc, v, Example] = makeParamSym(CollocationParameters, C)
     if C.stanceCollocation == 1
         %Make the decision variable symbols as a long list
         numberOfDV = (2* CollocationParameters.dof +...
-            CollocationParameters.cntrl_dof) * (CollocationParameters.N) +...
-            1; %state+control for whole traj; theta for flight; apexheight, Tstance, Tflight
+            CollocationParameters.cntrl_dof) * (CollocationParameters.N) +1;
+        %state+control for whole traj; 
         dv = sym('x', [1 numberOfDV], 'real')'; %all my decision vars (one hop with flight)
     %     x1 = x(1)... x80 = x(80); x81 = y(1)...theta... Tstance, Tflight,
     end

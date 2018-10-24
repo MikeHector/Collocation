@@ -13,7 +13,7 @@ function [saveDir] = getSaveDir(TypeZeroForListOfInputs)
 
     elseif strcmp(TypeZeroForListOfInputs, 'Alluring-PC')
 %         saveDir = 'D:\Documents\DRL\slip_opt\opt_results\';
-        disp('change me')
+        saveDir = 'C:\Users\Mike\Google Drive\CollocationResults';
 
     elseif strcmp(TypeZeroForListOfInputs, 'Michael-PC')
 %         saveDir = 'C:\Users\carda\OneDrive\Pictures\Documents\mikeHectorThings\slip_opt\opt_results\';

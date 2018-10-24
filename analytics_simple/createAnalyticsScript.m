@@ -6,7 +6,7 @@ tic
 makefile = 1; makehessian = 0; optimize = 1;
 assert(optimize == 0 || optimize == 1, 'optimize needs to be 0 or 1')
 
-dirname = 'simple_01';
+dirname = 'simple_16';
 currdir = [pwd filesep];
 if makefile == 1
     %Make folder that new dynamics are going into
@@ -22,7 +22,7 @@ if makehessian ==1
     pause
 end
 %Set up collocation parameters - these are fixed for every compile
-p.N = 20;
+p.N = 30;
 p.dof = 3;
 p.cntrl_dof = 2;
 smooth = 3;
@@ -40,7 +40,8 @@ dvBlock = dvSymList2Block(dv,vStruc);
 % Objective function
 %Get symbolic: objective func - gradient - hessian
 disp('Calculating objective function')
-obj_func = OBJ_F(dvBlock, vStruc, smooth);
+obj_func = OBJ_F_absFV(dvBlock, vStruc, smooth);
+
 disp('Taking gradient')
 grad_obj = jacobian(obj_func, dv).';
 disp('Done')
@@ -74,12 +75,12 @@ if makefile == 1
 end
 
 %Check objective function
-oldObj = OBJ_F(Example.dvNum, Example.vNum, smooth);
+oldObj = OBJ_F_absFV(Example.dvNum, Example.vNum, smooth);
 newObj = SymObjFunc(Example.dvSym, Example.vSymList);
 
 disp(['Error in analytical objective function is ',...
     num2str(oldObj-newObj)]);
-assert(oldObj-newObj < 1e-10, 'Error in analytical objective func is too high');
+assert(oldObj-newObj < 1e-4, 'Error in analytical objective func is too high');
 
 % Constraints
 

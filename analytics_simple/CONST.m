@@ -31,64 +31,78 @@ function [ c, ceq] = CONST( dv, Parameters, C)
 
     %Starting stance constraints
     %Fs starts at 0
-    Fs = Parameters.k * (r0 - r) + Parameters.c * (dr0 - dr);
-    if C.stanceStartWithNoForce == 1
-        eqCon = Fs(1);
+    Fleg = Parameters.k * (r0 - r) + Parameters.c * (dr0 - dr);
+%     if C.stanceStartWithNoForce == 1
+%         eqCon = Fs(1);
+%         disp('dont use this?')
+%     end
+%     
+    if C.legStartUncompressed == 1
+        %R0 = r @ TD
+        eqCon = r0(1) - r(1);
+    end
+
+    if C.TDLOenergy == 1
+%         assert(Parameters.deltav ==0, 'Fix below to be robust to deltav')
+        apexE = 1/2 * Parameters.m * Parameters.apex_velocity.^2 +...
+           Parameters.m * Parameters.g * Parameters.apex_height; %Velocity is the same for both with no deltav or deltah
+       q = [1; stanceEnd]; 
+       startEndE = 1/2 * Parameters.m * (dx(q).^2 + dy(q).^2) +...
+                   Parameters.m * Parameters.g * y(q);
+       eqCon(end+1:end+2) = startEndE - apexE;
     end
     
-    if C.touchdownEnergy == 1
-    %y - velocity + position. energy approach
-        eqCon(end+1) = Parameters.g * (y(1) - Parameters.apex_height) +...
-                       .5* dy(1)^2;
-    end
+%     if C.touchdownEnergy == 1
+%     %y - velocity + position. energy approach
+%         eqCon = Parameters.g * (y(1) - Parameters.apex_height) +...
+%                        .5* dy(1)^2;
+%     end
     
-    if C.xVelTD == 1
+    if C.xVel == 1
     %x - velocity
         eqCon(end+1) = dx(1) - Parameters.apex_velocity;
+        eqCon(end+1) = dx(end) - Parameters.apex_velocity;
     end
     
     %Ending stance constraints
     %Force in spring is 0
     if C.stanceEndWithNoForce == 1
-        eqCon(end+1) = Fs(stanceEnd);
+        eqCon(end+1) = Fleg(stanceEnd);
     end
     
-    if C.liftoffEnergy == 1
-        %y - velocity + position. energy approach
-        eqCon(end+1) = Parameters.g * (y(stanceEnd) - Parameters.apex_height) +...
-                       .5* dy(stanceEnd)^2;
-    end
+%     if C.liftoffEnergy == 1
+%         %y - velocity + position. energy approach
+%         eqCon(end+1) = Parameters.g * (y(stanceEnd) - Parameters.apex_height) +...
+%                        .5* dy(stanceEnd)^2;
+%     end
+%     
+%     if C.xVelLO == 1
+%     %Apex velocity x
+%         eqCon(end+1) = dx(stanceEnd) - (Parameters.apex_velocity + Parameters.deltav);
+%     end
     
-    if C.xVelLO == 1
-    %Apex velocity x
-        eqCon(end+1) = dx(stanceEnd) - (Parameters.apex_velocity + Parameters.deltav);
-    end
+%     if C.dr0StartZero == 1
+%         %Leg velocity is 0 at TD
+%         eqCon(end+1) = dr0(1);
+%     end
+%     
+%     if C.r0Start == 1
+%         %R0 starts at r0 start at TD
+%         eqCon(end+1) = r0(1) - Parameters.r0Start;
+%     end
     
-    if C.dr0StartZero == 1
-        %Leg velocity is 0 at TD
-        eqCon(end+1) = dr0(1);
-    end
-    
-    if C.r0Start == 1
-        %R0 starts at r0 start at TD
-        eqCon(end+1) = r0(1) - Parameters.r0Start;
-    end
-    
-    if C.legStartUncompressed == 1
-        %R0 = r @ TD
-        eqCon(end+1) = r0(1) - r(1);
-    end
-    
-    %Average velocity
-    if C.averageVelocity == 1
-        eqCon(end+1) = Parameters.average_velocity - (x(stanceEnd) - x(1)) / (dv(9,1));
-    end
 
-%     %Lock the TD angle
-    if C.lockTDangle == 1
-        eqCon(end+1) = Parameters.LockTDA .*...
-        (atan2(y(1),x(1)) - (Parameters.baseline_TDA + Parameters.TD_disturb));
-    end
+    
+%     %Average velocity
+%     if C.averageVelocity == 1
+%         eqCon(end+1) = Parameters.average_velocity - (x(stanceEnd) - x(1)) / (dv(9,1));
+%     end
+
+% %     %Lock the TD angle
+%     if C.lockTDangle == 1
+%         eqCon(end+1) = Parameters.LockTDA .*...
+%         (atan2(y(1),x(1)) - (Parameters.baseline_TDA + Parameters.TD_disturb));
+%     end
     
     eqCon = reshape(eqCon, [numel(eqCon),1]);
     %Concatenate collocation constraints and other constraints
@@ -96,8 +110,8 @@ function [ c, ceq] = CONST( dv, Parameters, C)
     
     if C.legForceBound == 1
     %Leg force is bounded
-        legForcePos = Fs - Parameters.fLegMax;
-        legForceNeg = -(Fs + Parameters.fLegMax);
+        legForcePos = Fleg - Parameters.fLegMax;
+        legForceNeg = Parameters.fLegMin - Fleg;
     else
         legForcePos = [];
         legForceNeg = [];
@@ -106,16 +120,24 @@ function [ c, ceq] = CONST( dv, Parameters, C)
     if C.rBound == 1
         %Constraint on length of spring
         rPos = r - Parameters.rMax;
-        rNeg = -(r + Parameters.rMin);
+        rNeg = Parameters.rMin - r;
     else
         rPos = [];
         rNeg = [];
     end
+    
+    if C.TDLOenergy == 1
+       dirYtd = dy(1);
+       dirYlo = -dy(end);
+    else
+        dirYtd = [];
+        dirYlo = [];
+    end
 
     %Inequality constraints
-    %Ankle torque bounds
+%     %Ankle torque bounds
     if C.ankleBound == 1
-        ankle_bound = Parameters.lf/2 .* Fs(1:stanceEnd) .*...
+        ankle_bound = Parameters.lf/2 .* Fleg(1:stanceEnd) .*...
                       y(1:stanceEnd) ./ r(1:stanceEnd);
         
         Acon1 = Tankle(1:stanceEnd) * Parameters.transmission_ankle - ankle_bound;
@@ -125,6 +147,20 @@ function [ c, ceq] = CONST( dv, Parameters, C)
         Acon2 = [];
     end
     
+        %Ankle torque bounds
+%     if C.ankleBound == 1
+%         xcop = Tankle(1:stanceEnd) * Parameters.transmission_ankle .* r ./...
+%                (y .* Fleg);
+%         
+%         Acon1 = xcop -Parameters.lf/2;
+%         Acon2 = Parameters.lf/2 - xcop;
+%     else
+%         Acon1 = [];
+%         Acon2 = [];
+%     end
+    
+    
+    
     %Minimum Distance traveled -- implemented as linear constraint
     if C.minDist == 1
         minX = Parameters.xDist - (x(end) - x(1));
@@ -132,7 +168,7 @@ function [ c, ceq] = CONST( dv, Parameters, C)
         minX = [];
     end
     
-    c = [Acon1'; Acon2'; minX; legForcePos'; legForceNeg'; rPos'; rNeg'];
+    c = [Acon1'; Acon2'; minX; legForcePos'; legForceNeg'; rPos'; rNeg'; dirYtd; dirYlo];
     
     %Reshape
     c = reshape(c, [size(c,1)*size(c,2),1]);

@@ -10,39 +10,39 @@ switch optNumber
 
     %Stance collocation constraints
     C.stanceCollocation = 1;
-
-    %Fs starts at 0
-    C.stanceStartWithNoForce = 1;
-
-    %y - velocity + position. energy approach  
-    C.touchdownEnergy = 1;
-
-    %x - velocity 
-    C.xVelTD = 1;
-
-    %Force in spring is 0 at end
-    C.stanceEndWithNoForce = 1;
-
-    %Liftoff energy
-    C.liftoffEnergy = 1;
-
-    %Apex velocity x
-    C.xVelLO = 1;
-
-    %Leg velocity is 0 at TD
-    C.dr0StartZero = 0;
-
-    %R0 starts at r0 start at TD
-    C.r0Start = 0;
     
     %r0 = r @ TD
     C.legStartUncompressed = 1;
-    
-    %Average velocity
-    C.averageVelocity = 0;
 
-    %Lock the TD angle
-    C.lockTDangle = 0;
+%     %Fs starts at 0
+%     C.stanceStartWithNoForce = 0;
+
+    %y - velocity + position. energy approach  
+    C.TDLOenergy = 1;
+
+    %x - velocity 
+    C.xVel = 1;
+
+    %Force in leg is 0 at end
+    C.stanceEndWithNoForce = 1;
+
+%     %Liftoff energy
+%     C.liftoffEnergy = 1;
+
+%     %Apex velocity x
+%     C.xVelLO = 1;
+
+%     %Leg velocity is 0 at TD
+%     C.dr0StartZero = 0;
+
+%     %R0 starts at r0 start at TD
+%     C.r0Start = 0;
+        
+%     %Average velocity
+%     C.averageVelocity = 0;
+
+%     %Lock the TD angle
+%     C.lockTDangle = 0;
 
     %Leg force is bounded
     C.legForceBound = 1;
@@ -54,5 +54,5 @@ switch optNumber
     C.ankleBound = 1;
 
     %Minimum Distance traveled -- implemented as linear constraint
-    C.minDist = 1;
+    C.minDist = 0;
 end

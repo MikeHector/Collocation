@@ -1,0 +1,4 @@
+Smoothing function epsilon .001
+Number of knots 30
+obj func = int(max(0,Fv) +RTm^2)
+no ankle constraints

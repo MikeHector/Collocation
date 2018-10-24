@@ -50,7 +50,7 @@ for i = 1:length(strucc)
     load(filename)
     results{i} = opt;
     varr(i) = opt.param(varInd);
-    if round(varr(i),10) == 3
+    if round(varr(i),10) == 2
 %         pause
         1+1;
         optVelTwo = opt;
@@ -103,10 +103,11 @@ while results_sorted_var{i}.param(varInd) < varmaxplot
         dist = results_sorted_var{i}.x(end) - results_sorted_var{i}.x(1);
         mgd = m * results_sorted_var{i}.param(10) * dist;
         Tflight = results_sorted_var{i}.Tflight;
+        Tstance = results_sorted_var{i}.Tstance;
         disp(['Energy of cycle is '...
             num2str(results_sorted_var{i}.cost * mgd), ' J'...
-            ' Flight Time = ' num2str(Tflight), ' seconds'...
-            ' Distance traveled = ' num2str(dist) ' meters'...
+            ' Stance Time = ' num2str(Tstance), ' seconds'...
+            ' Max force in Leg = ' num2str(max(Fs)) ' meters'...
             ' Velocity = ' num2str(results_sorted_var{i}.param(varInd))])
         
         if max(leg_response) > 12
@@ -141,7 +142,7 @@ while results_sorted_var{i}.param(varInd) < varmaxplot
 %         xdist = results_sorted_var{i}.x(end)-results_sorted_var{i}.x(1)
 
         drawnow
-        title1.String = ['Energy Required when Apex Velocity = ', num2str(results_sorted_var{i}.param(varInd))];
+        title1.String = ['CoT when Apex Velocity = ', num2str(results_sorted_var{i}.param(varInd),'%1.4g')];
         pause(.1)
         if record_video==1
             F=getframe(gcf);
