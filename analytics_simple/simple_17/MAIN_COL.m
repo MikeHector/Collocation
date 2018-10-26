@@ -16,20 +16,20 @@ colStrucArray = ColStrucBuilder();
 fieldNames = fieldnames(colStrucArray);
 
 saveDir = getSaveDir('DRL-PC');
-
+numOpts = 0;
 % optimizationID = '_NoAnkle';
 
-for qq = 1:2 %Once with ankles on, once with ankles off
+for qq = 2 %Once with ankles on, once with ankles off
     tagOnOff = {'_simpleAnkle_','_simpleNoAnkle_'};
-    
-    for m = [1, 3]
+    fileOnOff = {'ankleTD','noAnkleTD'};
+    for m = [5]
         colStruc = colStrucArray.(fieldNames{m});
 
         for k = 1:numel(colStruc.direction)
             direction = colStruc.direction{k};
 
             %Load baseline seed and parameters
-            load('noAnkleDamping')
+            load(fileOnOff{qq})
     %         load('C:\Users\mike-\Documents\DRL\slip_opt\opt_results\opt_disturbance_f_180820182234015610.mat')
     %         load( 'C:\Users\mike-\Documents\DRL\collocation\opt_results\opt_R_leg_150820181810270730.mat')
             opt_seed = opt.X;
@@ -46,6 +46,7 @@ for qq = 1:2 %Once with ankles on, once with ankles off
                 while tryCounter <= NumPerturb && opt.collParam.flag <= 0
                     [DV_out, opt] = RUN_COL(opt_seed, param, collParam, seeParam); %softmax
     %                 opt.collParam.flag = 1;
+                    numOpts = numOpts+1;
 
                     %Perturb if it hasn't converged
                     if opt.collParam.flag == 0 && tryCounter < NumPerturb
@@ -57,7 +58,7 @@ for qq = 1:2 %Once with ankles on, once with ankles off
 
                 %Save the coll
                 uniqueID = string(datetime, 'dMMyHHmmssSSSS');
-                filename = strcat('opt_', colStruc.varName, '_simpleNoAnkle_', uniqueID);
+                filename = strcat('opt_', colStruc.varName, tagOnOff{qq}, uniqueID);
                 save(strcat(saveDir,'\',filename),'opt');
 
                 %Save optimized decision variables as new seed
@@ -85,4 +86,4 @@ for qq = 1:2 %Once with ankles on, once with ankles off
     end
 end
 Time = toc;
-disp(['It took ', num2str(Time),' seconds to run collocations'])
+disp(['It took ', num2str(Time),' seconds to run', num2str(numOpts),' collocations'])

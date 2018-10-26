@@ -6,7 +6,7 @@ tic
 makefile = 1; makehessian = 0; optimize = 1;
 assert(optimize == 0 || optimize == 1, 'optimize needs to be 0 or 1')
 
-dirname = 'simple_16';
+dirname = 'simple_17';
 currdir = [pwd filesep];
 if makefile == 1
     %Make folder that new dynamics are going into

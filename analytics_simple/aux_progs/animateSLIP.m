@@ -20,7 +20,7 @@ function [ ] = animateSLIP(opt_results, record_video)
     slipbodyanimate=figure('Name','Slip body animation','pos',[1921,0,1921,1000]);
     figure(slipbodyanimate);
     ax1 = subplot(4,4,[1,5,9]);
-    ax1.XLim = [-.7 .7];
+    ax1.XLim = [-.9 .9];
     ax1.YLim = [-.1 1.2];
     axis equal
     %COM circle

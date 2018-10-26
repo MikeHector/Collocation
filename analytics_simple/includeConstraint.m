@@ -41,8 +41,8 @@ switch optNumber
 %     %Average velocity
 %     C.averageVelocity = 0;
 
-%     %Lock the TD angle
-%     C.lockTDangle = 0;
+    %Lock the TD angle
+    C.lockTDA = 1;
 
     %Leg force is bounded
     C.legForceBound = 1;

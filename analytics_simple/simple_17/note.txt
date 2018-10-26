@@ -1,0 +1,5 @@
+Simple 17
+Smoothing function epsilon .001
+Number of knots 30
+obj func = int(abs(F*v))
+Turned on lockTDA and deltav

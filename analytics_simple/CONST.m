@@ -43,25 +43,22 @@ function [ c, ceq] = CONST( dv, Parameters, C)
     end
 
     if C.TDLOenergy == 1
-%         assert(Parameters.deltav ==0, 'Fix below to be robust to deltav')
-        apexE = 1/2 * Parameters.m * Parameters.apex_velocity.^2 +...
-           Parameters.m * Parameters.g * Parameters.apex_height; %Velocity is the same for both with no deltav or deltah
-       q = [1; stanceEnd]; 
-       startEndE = 1/2 * Parameters.m * (dx(q).^2 + dy(q).^2) +...
-                   Parameters.m * Parameters.g * y(q);
-       eqCon(end+1:end+2) = startEndE - apexE;
+        initialApexE = 1/2 * Parameters.m * Parameters.apex_velocity.^2 +...
+                    Parameters.m * Parameters.g * Parameters.apex_height; %Velocity is the same for both with no deltav or deltah
+
+        finalApexE = 1/2 * Parameters.m * (Parameters.apex_velocity + Parameters.deltav).^2 +...
+                     Parameters.m * Parameters.g * Parameters.apex_height;
+        
+        iTemp = [1, stanceEnd];
+        startEndE = 1/2 * Parameters.m * ((dx(iTemp)).^2 + dy(iTemp).^2) +...
+                    Parameters.m * Parameters.g * y(iTemp);
+        eqCon(end+1:end+2) = startEndE - [initialApexE, finalApexE];
     end
-    
-%     if C.touchdownEnergy == 1
-%     %y - velocity + position. energy approach
-%         eqCon = Parameters.g * (y(1) - Parameters.apex_height) +...
-%                        .5* dy(1)^2;
-%     end
     
     if C.xVel == 1
     %x - velocity
         eqCon(end+1) = dx(1) - Parameters.apex_velocity;
-        eqCon(end+1) = dx(end) - Parameters.apex_velocity;
+        eqCon(end+1) = dx(end) - (Parameters.apex_velocity + Parameters.deltav);
     end
     
     %Ending stance constraints
@@ -98,11 +95,11 @@ function [ c, ceq] = CONST( dv, Parameters, C)
 %         eqCon(end+1) = Parameters.average_velocity - (x(stanceEnd) - x(1)) / (dv(9,1));
 %     end
 
-% %     %Lock the TD angle
-%     if C.lockTDangle == 1
-%         eqCon(end+1) = Parameters.LockTDA .*...
-%         (atan2(y(1),x(1)) - (Parameters.baseline_TDA + Parameters.TD_disturb));
-%     end
+%     %Lock the TD angle
+    if C.lockTDA == 1
+        eqCon(end+1) = Parameters.LockTDA .*...
+        (atan2(y(1),x(1)) - (Parameters.baseline_TDA + Parameters.TD_disturb));
+    end
     
     eqCon = reshape(eqCon, [numel(eqCon),1]);
     %Concatenate collocation constraints and other constraints
@@ -147,19 +144,7 @@ function [ c, ceq] = CONST( dv, Parameters, C)
         Acon2 = [];
     end
     
-        %Ankle torque bounds
-%     if C.ankleBound == 1
-%         xcop = Tankle(1:stanceEnd) * Parameters.transmission_ankle .* r ./...
-%                (y .* Fleg);
-%         
-%         Acon1 = xcop -Parameters.lf/2;
-%         Acon2 = Parameters.lf/2 - xcop;
-%     else
-%         Acon1 = [];
-%         Acon2 = [];
-%     end
-    
-    
+
     
     %Minimum Distance traveled -- implemented as linear constraint
     if C.minDist == 1

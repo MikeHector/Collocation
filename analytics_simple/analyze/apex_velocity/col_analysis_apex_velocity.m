@@ -21,7 +21,7 @@ dirComp = getSaveDir('DRL-PC'); %Change if you're running on a different compute
 
 % dirComp = 'C:\Users\mike-\Google Drive\Collocation\damping_highLegE_lowAnkleE';
 
-dirname = strcat(dirComp, '\opt_', varName, '_simpleN*');
+dirname = strcat(dirComp, '\opt_', varName, '_simpleA*');
 % dirname = strcat(dirComp, 'BaselineDampingN*');
 strucc = dir(dirname);
 fig = figure;

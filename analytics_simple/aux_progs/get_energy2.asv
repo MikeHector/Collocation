@@ -44,14 +44,6 @@ function [cost] = get_energy2(OPT_RES, plotifone)
     cost.ankle_e = cost_ankle_e;
     cost.ankle_m = cost_ankle_m;
     
-    legPower = OPT_RES.dr0 .* OPT_RES.Fleg;
-    anklePower = OPT_RES.Tankle.* transmission_ankle .*...
-    (OPT_RES.x .* OPT_RES.dy -OPT_RES.y .* OPT_RES.dx)./OPT_RES.r.^2;
-
-    cost.legPower = legPower;
-    cost.anklePower = anklePower;
-
-    
     TorqueToStand = m * g / (transmission/mechA_leg);
     cost.LegEtoStand = 0 * TorqueToStand^2 * Tstance;
     
@@ -67,11 +59,12 @@ function [cost] = get_energy2(OPT_RES, plotifone)
     
     if plotifone == 2
         figure;
-
-        plot(OPT_RES.t, legPower); hold on; plot(OPT_RES.t, anklePower);
-%         stand = refline(0,cost.LegEtoStand); stand.LineStyle = '--';
-        legend('Leg mechanical', 'Ankle mechanical')
-        title('Actuator power')
+        legPower = OPT_RES.dr0 .* OPT_RES
+        plot(OPT_RES.t(1:OPT_RES.collParam.N), cle(1:OPT_RES.collParam.N)); hold on;
+        plot(OPT_RES.t(1:OPT_RES.collParam.N), clm(1:OPT_RES.collParam.N)); plot(OPT_RES.t(1:OPT_RES.collParam.N), cae(1:OPT_RES.collParam.N)); plot(OPT_RES.t(1:OPT_RES.collParam.N), cam(1:OPT_RES.collParam.N));
+        stand = refline(0,cost.LegEtoStand); stand.LineStyle = '--';
+        legend('Leg electrical', 'Leg mechanical', 'Ankle electrical', 'Ankle mechanical', 'Power to stand')
+        title('Actuator power contributing to energy consumption')
         xlabel('Time'); ylabel('Actuator power')
     end
     

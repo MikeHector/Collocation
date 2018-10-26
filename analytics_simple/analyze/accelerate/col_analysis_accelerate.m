@@ -10,12 +10,12 @@ if record_video==1
 end
 
 % {'c', 'apex_velocity', 'disturance_f', 'TD_disturb', 'deltav', 'deltah'}
-varName = 'apex_height';
-varInd = 12;
-varmaxplot = 1.36;
-varminplot = .5;
-energyMax = .7;
-plotName = 'Apex Height';
+varName = 'deltav';
+varInd = 14;
+varmaxplot = .68;
+varminplot = -.95;
+energyMax = 1.5;
+plotName = 'Apex Velocity';
 cf = pwd; %Path stuff
 dirComp = getSaveDir('DRL-PC'); %Change if you're running on a different computer
 
@@ -38,26 +38,21 @@ TAmin = refline(0, -2); TAmin.Color = 'b'; TAmin.LineStyle = '--'; TAmin.HandleV
 subplot(2,2,3); an3 = plot(1,1,'ro'); hold on; an32 = plot(2,2);
 axis([varminplot,varmaxplot, 0, energyMax]); xlabel(plotName); ylabel('Cost');
 title1 = title('wut');
-subplot(2,2,4); an4 = plot(1,1); hold on; an42 = plot(1,1);
-axis([0,1, -1, 1]); xlabel('Normalized Time of Stance'); ylabel('Actuator power'); legend('Leg Power','Ankle Power','Location','southeast')
-% COPmax = refline(0, .15/2); COPmax.Color = 'b'; COPmax.LineStyle = '--'; COPmax.HandleVisibility = 'off';
-% COPmin = refline(0, -.15/2); COPmin.Color = 'b'; COPmin.LineStyle = '--'; COPmin.HandleVisibility = 'off';
-title('Actuator Power through Stance')
+subplot(2,2,4); an4 = plot(1,1);
+axis([0,1, -.07, .07]); xlabel('Normalized Time of Stance'); ylabel('Center of Pressure Position')
+COPmax = refline(0, .15/2); COPmax.Color = 'b'; COPmax.LineStyle = '--'; COPmax.HandleVisibility = 'off';
+COPmin = refline(0, -.15/2); COPmin.Color = 'b'; COPmin.LineStyle = '--'; COPmin.HandleVisibility = 'off';
+title('Center of Pressure Profile Through Stance')
 
-figure;
 for i = 1:length(strucc)
     filename = strucc(i).name;
     filename = strcat(dirComp, '\', filename);
     load(filename)
     results{i} = opt;
     varr(i) = opt.param(varInd);
-    
-    if round(varr(i),3) == .6 %round(varr(i),3) < 1.08 && round(varr(i),3) > .94
+    if round(varr(i),3) == -.5
 %         pause
         1+1;
-        varr(i)
-%         get_energy2(opt,2)
-        plot(opt.t/opt.t(end), opt.r0,'b'); hold on; plot(opt.t/opt.t(end), opt.r,'r'); legend('r0','r')
     end
 end
 [var_sorted,i] = sort(varr);
@@ -71,7 +66,8 @@ for k = 1:length(i)
         cost_graph(q) = results{i(k)}.cost;
         energy{q} = get_energy2(results{i(k)},0);
         percentLeg(q) = sum([energy{q}.leg_e,energy{q}.leg_m])/ sum([energy{q}.leg_e,energy{q}.leg_m,energy{q}.ankle_e,energy{q}.ankle_m]);
-        r0Initial(q) = results{i(k)}.r0(1);
+        tdA(q) = atan2(results{i(k)}.y(1),results{i(k)}.x(1));
+        r00(q) = results{i(k)}.r0(1);
         q = q+1;
     end
 end
@@ -133,10 +129,10 @@ while results_sorted_var{i}.param(varInd) < varmaxplot
         
 %         an4.XData = thetaNorm;
         an4.XData = time;
-        an4.YData = energy{i}.legPower;
+        an4.YData = xcop;
 
-        an42.XData = time;
-        an42.YData = energy{i}.anklePower;
+%         an4.XData = thetaNorm;
+%         an4.YData = ankleFStance;
         
 %         xdist = results_sorted_var{i}.x(end)-results_sorted_var{i}.x(1)
 
