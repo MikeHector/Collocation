@@ -13,7 +13,8 @@ switch in
         maxZero = @(q) .2*log(1+exp(5*q));
         
     case 3 
-        maxZero = @(q) (q + sqrt(q.^2 + .001^2))/2;
+        eps = 1e-6;
+        maxZero = @(q) (q + sqrt(q.^2 + eps^2))/2;
         
     otherwise
         pause

@@ -128,7 +128,7 @@ function [ ] = animateSLIP(opt_results, record_video)
             arrow.Vertices(:,1) = arrow_move(xcop(i));
 
             %COP Plot
-            cop_plot.XData = s.t(1:i);
+            cop_plot.XData = s.t(1:i); 
             cop_plot.YData = xcop(1:i);
             
             %Ankle force plot

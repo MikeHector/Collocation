@@ -17,14 +17,15 @@ function [ cost ] = OBJ_F_old( dv, Parameters, smooth )
     dx = dv(4,:);
     dy = dv(5,:);
     dr0 = dv(6,:);
+    ddr0 = dv(7,:);
     dr = (x .* dx + y .* dy) ./ r;
     Fleg = Parameters.k * (r0 - r) + Parameters.c * (dr0 - dr);
     for i = 1:size(dv,2)
         cost_leg = cost_leg + ...
-            (abSmooth(Fleg(i) .* dr0(i)) + Fleg(i).^2) * hk;
+            (abSmooth(Fleg(i) .* dr0(i)) + ddr0(i).^2/100) * hk;
         cost_ankle = cost_ankle + ...
             (abSmooth(dv(8,i) * Parameters.transmission_ankle .*...
-            (x(i) .* dy(i) - y(i) .* dx(i)) ./ (r(i)^2)) + dv(8,i)^2)  * hk;
+            (x(i) .* dy(i) - y(i) .* dx(i)) ./ (r(i)^2)))  * hk;
     end
     xTravel = abSmooth(dv(1,end) - dv(1,1));
     cost = (cost_leg + cost_ankle) / (Parameters.m * Parameters.g * xTravel);

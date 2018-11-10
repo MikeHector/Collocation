@@ -5,6 +5,7 @@ function [eqStance] = stanceConstraints(dv, p)
     qLen = 2*p.dof;
     deltaT = dv(9,1) ./ p.N;
     
+%     eqStance = zeros(qLen,p.N-1);
     %Collocation constraints (dynamics)
     for i = 1:p.N-1
         Fk = stanceDyn(dv(:, i), p);

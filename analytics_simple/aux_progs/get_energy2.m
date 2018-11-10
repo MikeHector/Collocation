@@ -77,13 +77,13 @@ function [cost] = get_energy2(OPT_RES, plotifone)
     
     if plotifone == 3
         figure;
-        subplot(7,1,1); plot(OPT_RES.t(1:OPT_RES.collParam.Nstance), OPT_RES.x(1:OPT_RES.collParam.Nstance)); title('x');
-        subplot(7,1,2); plot(OPT_RES.t(1:OPT_RES.collParam.Nstance), OPT_RES.y(1:OPT_RES.collParam.Nstance)); title('y');
-        subplot(7,1,3); plot(OPT_RES.t(1:OPT_RES.collParam.Nstance), OPT_RES.dx(1:OPT_RES.collParam.Nstance)); title('dx');
-        subplot(7,1,4); plot(OPT_RES.t(1:OPT_RES.collParam.Nstance), OPT_RES.dy(1:OPT_RES.collParam.Nstance)); title('dy');
-        subplot(7,1,5); plot(OPT_RES.t(1:OPT_RES.collParam.Nstance), OPT_RES.x(1:OPT_RES.collParam.Nstance).*OPT_RES.dy(1:OPT_RES.collParam.Nstance)); title('x times dy');
-        subplot(7,1,6); plot(OPT_RES.t(1:OPT_RES.collParam.Nstance), OPT_RES.y(1:OPT_RES.collParam.Nstance).*OPT_RES.dx(1:OPT_RES.collParam.Nstance)); title('y times dx')
-        subplot(7,1,7); plot(OPT_RES.t(1:OPT_RES.collParam.Nstance), xyx(1:OPT_RES.collParam.Nstance)); title('XY velocity')
+        subplot(7,1,1); plot(OPT_RES.t(1:OPT_RES.collParam.N), OPT_RES.x(1:OPT_RES.collParam.N)); title('x');
+        subplot(7,1,2); plot(OPT_RES.t(1:OPT_RES.collParam.N), OPT_RES.y(1:OPT_RES.collParam.N)); title('y');
+        subplot(7,1,3); plot(OPT_RES.t(1:OPT_RES.collParam.N), OPT_RES.dx(1:OPT_RES.collParam.N)); title('dx');
+        subplot(7,1,4); plot(OPT_RES.t(1:OPT_RES.collParam.N), OPT_RES.dy(1:OPT_RES.collParam.N)); title('dy');
+        subplot(7,1,5); plot(OPT_RES.t(1:OPT_RES.collParam.N), OPT_RES.x(1:OPT_RES.collParam.N).*OPT_RES.dy(1:OPT_RES.collParam.N)); title('x times dy');
+        subplot(7,1,6); plot(OPT_RES.t(1:OPT_RES.collParam.N), OPT_RES.y(1:OPT_RES.collParam.N).*OPT_RES.dx(1:OPT_RES.collParam.N)); title('y times dx')
+        subplot(7,1,7); plot(OPT_RES.t(1:OPT_RES.collParam.N), xyx(1:OPT_RES.collParam.N)); title('XY velocity')
     end
 end
 

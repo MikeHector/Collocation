@@ -6,7 +6,7 @@
 %solution as a seed for the next optimization
 clear; clc;
 
-filename = 'ankle';
+filename = 'ankleddr03';
 load(filename)
 opt_seed = opt.X;
 param = opt.param;

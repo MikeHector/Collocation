@@ -5,7 +5,7 @@ function [c, ceq] = const(dv, p)
     dx = dv(2,:);
     F = dv(3,:);
 
-    collCon = collConstraints(dv, p);
+    collCon = collConstraintsLeftReimann(dv, p);
 
     eqCon(1) = x(1); %block starts at 0 m
     eqCon(2) = x(end) - 1; %block stops at 1 m

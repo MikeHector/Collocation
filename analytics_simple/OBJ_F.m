@@ -11,6 +11,7 @@ function [ cost ] = OBJ_F( dv, Parameters, smooth )
 %     maxXzero = MikeMax(smooth);
     eps = .001;
     maxZero = MikeMax(smooth);
+    abSmooth = @(x) sqrt(x.^2 + eps.^2) - eps;
     x = dv(1,:);
     y = dv(2,:);
     r0 = dv(3,:);
@@ -21,14 +22,18 @@ function [ cost ] = OBJ_F( dv, Parameters, smooth )
     Tankle = dv(8,:);
     dr = (x .* dx + y .* dy) ./ r;
     Fleg = Parameters.k * (r0 - r) + Parameters.c * (dr0 - dr);
-    Tleg = Parameters.i_motor*Parameters.transmission*ddr0 + Fleg/Parameters.transmission;
-    for i = 1:size(dv,2)
-        cost_leg = cost_leg + ...
-            (maxZero(Fleg(i) .* dr0(i)) + Parameters.R_leg*Tleg(i).^2) * hk;
-        cost_ankle = cost_ankle + ...
-            (maxZero(Tankle(i) * Parameters.transmission_ankle .*...
-            (x(i) .* dy(i) - y(i) .* dx(i)) ./ (r(i)^2)) + Parameters.R_ankle*Tankle(i)^2)  * hk;
+%     Tleg = Parameters.i_motor*Parameters.transmission*ddr0;% + Fleg/Parameters.transmission;
+    Tleg = Fleg/Parameters.transmission;
+    wkLeg = @(k) abSmooth(Fleg(k) .* dr0(k));
+    wkAnkle = @(k) abSmooth(Tankle(k) * Parameters.transmission_ankle .*...
+            (x(k) .* dy(k) - y(k) .* dx(k)) ./ (r(k)^2));
+    Jleg = 0;
+    Jankle = 0;
+    for i = 1:size(dv,2)-1
+        Jleg = Jleg + .5 * hk * (wkLeg(i) + wkLeg(i+1));
+        Jankle = Jankle + .5 * hk * (wkAnkle(i) + wkAnkle(i+1));
     end
     xTravel = maxZero(dv(1,end) - dv(1,1));
-    cost = (cost_leg + cost_ankle) / (Parameters.m * Parameters.g * xTravel);
+    cost = (Jleg + Jankle + sum(abSmooth(ddr0)*hk*Parameters.objWeight))...
+        / (Parameters.m * Parameters.g * xTravel);
 end
