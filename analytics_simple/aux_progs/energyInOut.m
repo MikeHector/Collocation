@@ -17,9 +17,9 @@ function [beginEndError, inOutError] = energyInOut(o, plotStuff)
     %Integrate over time
     hk = diff(o.t)';
     hk = [hk;hk(end)];
-    d = cumsum(o.param(2) * (o.dr0 - dr).^2 .* hk);%Dissipation of the damper
-    lm = cumsum(o.Fleg .* o.dr0.*hk); %mechanical energy added by leg
-    am = cumsum(o.Tankle .* o.param(9) .*(o.x .* o.dy - o.y .* o.dx) ./ o.r.^2 .* hk); %mechanical energy added by ankle
+    d = cumtrapz(o.param(2) * (o.dr0 - dr).^2 .* hk);%Dissipation of the damper
+    lm = cumtrapz(o.Fleg .* o.dr0.*hk); %mechanical energy added by leg
+    am = cumtrapz(o.Tankle .* o.param(9) .*(o.x .* o.dy - o.y .* o.dx) ./ o.r.^2 .* hk); %mechanical energy added by ankle
     
     Ein = lm + am;
     Eout = d;
@@ -35,14 +35,22 @@ function [beginEndError, inOutError] = energyInOut(o, plotStuff)
    
    if plotStuff == 1
        figure; 
-       subplot(2,1,1); plot(o.t, sysE); title('System energy over time');
-       ylabel('Kinetic and potential energy of mass');
+       subplot(3,1,1); plot(o.t, sysE); title('System energy over time');
+       ylabel('Energy of mass');
        xlabel('Time')
+       grid on
 
-       subplot(2,1,2); plot(o.t, [Ein, Eout]); title('Energy in and out of cycle');
-       ylabel('Kinetic and potential energy of mass and rotor');
+       subplot(3,1,2); plot(o.t, [Ein, Eout]); title('Energy in and out of cycle');
+       ylabel('Cumulative energy contribution');
        xlabel('Time')
-       legend('Energy in through actuators','Energy out through damper')
+       legend('Energy in through actuators','Energy dissipated by damper','Location','Northwest')
+       grid on
+       
+       subplot(3,1,3); plot(o.t, [lm, am]); title('Actuator contributions');
+       ylabel('Cumulative energy contribution');
+       xlabel('Time')
+       legend('Leg motor','Ankle motor','Location','Northwest')
+       grid on
    end
 end
 

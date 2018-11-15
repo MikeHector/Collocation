@@ -6,10 +6,10 @@
 %solution as a seed for the next optimization
 clear; clc;
 
-filename = 'noAnkleNoDampInf';
+filename = 'noAnkleNoDamp';
 load(filename)
 opt_seed = opt.X;
-param = opt.param;
+param = opt.param;  
 collParam = opt.collParam;
 seeParam = opt.seeParam;
 
@@ -17,7 +17,7 @@ iterationCounter = 0;
 lowest_cost = opt.cost+1000;
 goodCounter = 0;
 
-while iterationCounter < 100
+while iterationCounter < 20000
     [~, opt] = RUN_COL(opt_seed, param, collParam, seeParam);
     opt_seed = opt.X;
     param = opt.param;  
@@ -30,7 +30,7 @@ while iterationCounter < 100
         %Save the coll
         save(filename,'opt');
         disp('NEW SAVE!')
-        Perturb it a little
+        %Perturb it a little
         opt_seed = opt.X + .25*rand(size(opt.X));
     else
         %Load best seed and

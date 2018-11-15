@@ -6,7 +6,7 @@ tic
 makefile = 1; makehessian = 0; optimize = 1;
 assert(optimize == 0 || optimize == 1, 'optimize needs to be 0 or 1')
 
-dirname = 'simple_31_29_With_31_Points';
+dirname = 'simple_24_17withRS_2';
 currdir = [pwd filesep];
 if makefile == 1
     %Make folder that new dynamics are going into
@@ -22,7 +22,7 @@ if makehessian ==1
     pause
 end
 %Set up collocation parameters - these are fixed for every compile
-p.N = 3;
+p.N = 30;
 p.dof = 3;
 p.cntrl_dof = 2;
 smooth = 3;
@@ -116,7 +116,7 @@ disp(['Error in analytical objective function is ',...
 %Non-linear constraints
 %Get symbolic constraints
 disp('Fetching symbolic constraints')
-[c_ineq, c_eq] = Const4MattKelly(dvBlock,vStruc, C);
+[c_ineq, c_eq] = CONST(dvBlock,vStruc, C);
 disp('Done')
 
 
@@ -138,7 +138,7 @@ if makefile == 1
 end
 
 %Check Constraint function
-[oldc, oldceq] = Const4MattKelly(Example.dvNum, Example.vNum, C);
+[oldc, oldceq] = CONST(Example.dvNum, Example.vNum, C);
 newcineq = c_ineq_func(Example.dvSym, Example.vSymList);
 newceq = c_eq_func(Example.dvSym, Example.vSymList);
 
