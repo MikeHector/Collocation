@@ -1,6 +1,6 @@
 f = {'x','y','r0','dx','dy','dr0','ddr0','Tankle'};
 oldTime = opt.t;
-newN = 31;
+newN = 50;
 newTime = linspace(0,opt.Tstance,newN);
 X = [];
 for i = 1:numel(f)

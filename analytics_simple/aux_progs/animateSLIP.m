@@ -1,9 +1,18 @@
 function animateSLIP(opt)
-    full = stance2Full(opt);
-    s = full; clear opt; clear full;
-    s.theta = [linspace(pi/2,atan2(s.y(s.stanceStartN), s.x(s.stanceStartN)),s.stanceStartN),...
-               atan2(s.y(s.stanceStartN+1:s.stanceEndN),s.x(s.stanceStartN+1:s.stanceEndN)),...
-               linspace(atan2(s.y(s.stanceEndN),s.x(s.stanceEndN)),pi/2,length(s.t)-s.stanceEndN)];
+    f = stance2Full(opt);
+    f.theta = [linspace(pi/2,atan2(f.y(f.stanceStartN), f.x(f.stanceStartN)),f.stanceStartN),...
+           atan2(f.y(f.stanceStartN+1:f.stanceEndN),f.x(f.stanceStartN+1:f.stanceEndN)),...
+           linspace(atan2(f.y(f.stanceEndN),f.x(f.stanceEndN)),pi/2,length(f.t)-f.stanceEndN)];
+    %interpolate for smooth animation
+    names = {'x','y','theta','xcop','r0','ddr0','Tankle','r'};
+    newTime = linspace(0,f.t(end),50);
+    s =f; clear f;
+    for i = 1:numel(names)
+        s.(names{i}) = interp1(s.t,s.(names{i}),newTime);
+    end
+    %
+    clear opt
+
     k = s.param(strcmp(s.collParam.modelParamList, 'k'));
     c = s.param(strcmp(s.collParam.modelParamList, 'c'));
     transmission = s.param(strcmp(s.collParam.modelParamList, 'transmission'));
@@ -21,6 +30,8 @@ function animateSLIP(opt)
     ax1.YLim = [-.1 1.5];
 %     axis equal
 
+    %apex height line
+    
         %Spring Line
 %     x_l = [-.01, .01, .01, -.01];
 %     y_l = [0, 0, -s.r(1), -s.r(1)];

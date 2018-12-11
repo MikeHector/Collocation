@@ -1,7 +1,7 @@
 % MHector
 % 8.14.18
 % COL analysis
-clc; clear; close all
+clc; clear; %close all
 record_video = 0;
 if record_video==1
     v=VideoWriter('Apex_velocity','MPEG-4');
@@ -12,8 +12,8 @@ end
 % {'c', 'apex_velocity', 'disturance_f', 'TD_disturb', 'deltav', 'deltah'}
 varName = 'apex_height';
 varInd = 12;
-varmaxplot = 1.36;
-varminplot = .5;
+varmaxplot = 1.1;
+varminplot = .9;
 energyMax = .7;
 plotName = 'Apex Height';
 cf = pwd; %Path stuff
@@ -39,12 +39,12 @@ subplot(2,2,3); an3 = plot(1,1,'ro'); hold on; an32 = plot(2,2);
 axis([varminplot,varmaxplot, 0, energyMax]); xlabel(plotName); ylabel('Cost');
 title1 = title('wut');
 subplot(2,2,4); an4 = plot(1,1); hold on; an42 = plot(1,1);
-axis([0,1, -1, 1]); xlabel('Normalized Time of Stance'); ylabel('Actuator power'); legend('Leg Power','Ankle Power','Location','southeast')
+axis([0,1.2, -.1, 1]); xlabel('Normalized Time of Stance'); ylabel('Actuator power'); legend('Leg Power','Ankle Power','Location','southeast')
 % COPmax = refline(0, .15/2); COPmax.Color = 'b'; COPmax.LineStyle = '--'; COPmax.HandleVisibility = 'off';
 % COPmin = refline(0, -.15/2); COPmin.Color = 'b'; COPmin.LineStyle = '--'; COPmin.HandleVisibility = 'off';
 title('Actuator Power through Stance')
 
-figure;
+% figure;
 for i = 1:length(strucc)
     filename = strucc(i).name;
     filename = strcat(dirComp, '\', filename);
@@ -52,12 +52,12 @@ for i = 1:length(strucc)
     results{i} = opt;
     varr(i) = opt.param(varInd);
     
-    if round(varr(i),3) == .6 %round(varr(i),3) < 1.08 && round(varr(i),3) > .94
+    if round(varr(i),3) == .7 %round(varr(i),3) < 1.08 && round(varr(i),3) > .94
 %         pause
         1+1;
         varr(i)
 %         get_energy2(opt,2)
-        plot(opt.t/opt.t(end), opt.r0,'b'); hold on; plot(opt.t/opt.t(end), opt.r,'r'); legend('r0','r')
+%         plot(opt.t/opt.t(end), opt.r0,'b'); hold on; plot(opt.t/opt.t(end), opt.r,'r'); legend('r0','r')
     end
 end
 [var_sorted,i] = sort(varr);
@@ -72,6 +72,7 @@ for k = 1:length(i)
         energy{q} = get_energy2(results{i(k)},0);
         percentLeg(q) = sum([energy{q}.leg_e,energy{q}.leg_m])/ sum([energy{q}.leg_e,energy{q}.leg_m,energy{q}.ankle_e,energy{q}.ankle_m]);
         r0Initial(q) = results{i(k)}.r0(1);
+        tdA(q) = atan2(results{i(k)}.y(1),results{i(k)}.x(1));
         q = q+1;
     end
 end
@@ -81,8 +82,9 @@ an32.YData = cost_graph;
 i = 1;
 while results_sorted_var{i}.param(varInd) < varmaxplot
     
-   if results_sorted_var{i}.collParam.flag > 0
-        full = stance2Full(results_sorted_var{i});
+   if (results_sorted_var{i}.collParam.flag > 0) && (results_sorted_var{i}.param(varInd) > varminplot)
+       
+        full = results_sorted_var{i};%stance2Full(results_sorted_var{i});
         time = results_sorted_var{i}.t / results_sorted_var{i}.t(end);
         leg_response = results_sorted_var{i}.Fleg;
         ankle_response = results_sorted_var{i}.Tankle;
@@ -103,10 +105,11 @@ while results_sorted_var{i}.param(varInd) < varmaxplot
 %         ankleFStance = ankleF(1:results_sorted_var{i}.collParam.Nstance);
 %         thetaCycle = [atan2(results_sorted_var{i}.y(1:results_sorted_var{i}.collParam.Nstance), results_sorted_var{i}.x(1:results_sorted_var{i}.collParam.Nstance)); results_sorted_var{i}.theta(2:end)];
 %         thetaNorm = linspace(0,1,length(thetaCycle(1:results_sorted_var{i}.collParam.Nstance)));
-        [beginEnd, inOut] = energyInOut(results_sorted_var{i},0);
-        disp(num2str(beginEnd));
-        disp(num2str(inOut));
-        results_sorted_var{i}.collParam.fmincon_stuff.firstorderopt
+%         [beginEnd, inOut] = energyInOut(results_sorted_var{i},0);
+%         disp(num2str(beginEnd));
+%         disp(num2str(inOut));
+%         results_sorted_var{i}.collParam.fmincon_stuff.firstorderopt
+        results_sorted_var{i}.r(1)
         
         
         if max(leg_response) > 12
@@ -132,16 +135,20 @@ while results_sorted_var{i}.param(varInd) < varmaxplot
         an3.YData = results_sorted_var{i}.cost;
         
 %         an4.XData = thetaNorm;
-        an4.XData = time;
-        an4.YData = energy{i}.legPower;
+%         an4.XData = time;
+%         an4.YData = results_sorted_var{i}.r0;%  energy{i}.legPower;
+
+%         an42.XData = time;
+%         an42.YData = results_sorted_var{i}.r;
 
         an42.XData = time;
-        an42.YData = energy{i}.anklePower;
+%         an42.YData = energy{i}.anklePower;
+        an42.YData = xcop;
         
 %         xdist = results_sorted_var{i}.x(end)-results_sorted_var{i}.x(1)
 
         drawnow
-        title1.String = ['Energy Required when Apex Velocity = ', num2str(results_sorted_var{i}.param(varInd))];
+        title1.String = ['Energy Required when Apex Height = ', num2str(results_sorted_var{i}.param(varInd))];
         pause(.1)
         if record_video==1
             F=getframe(gcf);

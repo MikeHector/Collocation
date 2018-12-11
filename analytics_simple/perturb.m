@@ -6,10 +6,10 @@
 %solution as a seed for the next optimization
 clear; clc;
 
-dirComp = getSaveDir('Alluring-PC'); %Change if you're running on a different computer
+dirComp = getSaveDir('DRL-PC'); %Change if you're running on a different computer
 
 % dirComp = 'C:\Users\mike-\Google Drive\Collocation\damping_highLegE_lowAnkleE';
-varNames = {'c','apex_height'};
+varNames = {'apex_height'};
 numOfSaves = 0;
 passes = 0;
 while 1<2

@@ -12,8 +12,8 @@ end
 % {'c', 'apex_velocity', 'disturance_f', 'TD_disturb', 'deltav', 'deltah'}
 varName = 'apex_velocity';
 varInd = 13;
-varmaxplot = 2.4;
-varminplot = .2;
+varmaxplot = 1.5;
+varminplot = .1;
 energyMax = .35;
 plotName = 'Apex Velocity';
 cf = pwd; %Path stuff
@@ -160,12 +160,15 @@ for i = 1:numel(energy)
 end
 
 figure;
-plot(var_graph, legE); hold on;
-plot(var_graph, legM);
-plot(var_graph, ankleE);
-plot(var_graph, ankleM);
-rl = refline(0, energy{1}.LegEtoStand); rl.LineStyle = '--';
-legend('Leg electrical', 'Leg mechanical', 'Ankle electrical', 'Ankle mechanical', 'Energy to stand')
+% plot(var_graph, legE); hold on;
+plot(var_graph, 100*legM./(legM+ankleM)); hold on;
+% plot(var_graph, ankleE);
+plot(var_graph, 100*ankleM./(legM+ankleM));
+ylabel('Pecent contribution to total work')
+xlabel('Apex Velocity')
+% rl = refline(0, energy{1}.LegEtoStand); rl.LineStyle = '--';
+% legend('Leg electrical', 'Leg mechanical', 'Ankle electrical', 'Ankle mechanical', 'Energy to stand')
+legend('Leg mechanical','Ankle mechanical')
 
 % % GRF/leg length graph
 % 

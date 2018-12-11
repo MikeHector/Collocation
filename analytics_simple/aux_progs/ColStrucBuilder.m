@@ -22,7 +22,7 @@ clear colStruc
 %2
 colStruc.direction = {'up','down'};
 colStruc.varName = 'apex_velocity';
-colStruc.deltaVar = .025;
+colStruc.deltaVar = .005;
 colStruc.varMax = 3;
 colStruc.varMin = .2;
 colStruc.var = 1;
@@ -32,14 +32,14 @@ colls2 = (abs(colStruc.varMax) + abs(colStruc.varMin))/colStruc.deltaVar;
 colls = colls + colls2;
 clear colStruc
 
-%Changing Average Apex Height\
+%Changing Apex Height
 %3
-colStruc.direction = {'up','down'};
+colStruc.direction = {'down'};
 colStruc.varName = 'apex_height';
-colStruc.deltaVar = .002;
-colStruc.varMax = 1.5;
+colStruc.deltaVar = .001;
+colStruc.varMax = .900001;
 colStruc.varMin = .5;
-colStruc.var = 1;
+colStruc.var = .9;
 colStruc.varInd = 12;
 ColStrucArray.ApexHeight = colStruc;
 colls3 = (abs(colStruc.varMax - colStruc.varMin))/colStruc.deltaVar;
@@ -124,6 +124,20 @@ colStruc.var = 0;
 ColStrucArray.LegMotor = colStruc;
 colls8 = (abs(colStruc.varMax) + abs(colStruc.varMin))/colStruc.deltaVar;
 colls = colls + colls8;
+clear colStruc
+
+%Changing Max Leg extension
+%10
+colStruc.direction = {'up','down'};
+colStruc.varName = 'rMax';
+colStruc.deltaVar = .005;
+colStruc.varMax = 1.1;
+colStruc.varMin = .5;
+colStruc.var = 1;
+colStruc.varInd = 23;
+ColStrucArray.rMax = colStruc;
+colls3 = (abs(colStruc.varMax - colStruc.varMin))/colStruc.deltaVar;
+colls = colls + colls3;
 clear colStruc
 
 end

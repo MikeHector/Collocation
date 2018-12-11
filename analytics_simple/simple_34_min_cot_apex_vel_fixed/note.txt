@@ -1,0 +1,8 @@
+apex height is free in this optimization
+apex velocity is set to opt.param(12) value; implemented as a bound (dirty)
+also 30 points with ddr0 weight
+
+Sweep velocities (apexVel_apexHeightFree)
+see ankle use through these
+These are optimal gaits given an apex velocity.
+i.e. speed vs ankle utility

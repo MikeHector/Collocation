@@ -7,7 +7,7 @@ function [ c, ceq] = CONST( dv, Parameters, C)
 
     %Stance collocation constraints
     if C.stanceCollocation ==1
-        eqStance = stanceConstraintsLeftReimann(dv, Parameters);
+        eqStance = stanceConstraints(dv, Parameters);
 %         disp('Reimann sums!')
     else 
         eqStance = [];

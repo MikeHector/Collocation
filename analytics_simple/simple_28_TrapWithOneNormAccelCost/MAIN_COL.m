@@ -19,10 +19,10 @@ saveDir = getSaveDir('DRL-PC');
 numOpts = 0;
 % optimizationID = '_NoAnkle';
 
-for qq = 1:2 %Once with ankles on, once with ankles off
+for qq = 1 %Once with ankles on, once with ankles off
     tagOnOff = {'_simpleAnkle_','_simpleNoAnkle_'};
-    fileOnOff = {'ankle','noAnkle'};
-    for m = [2]
+    fileOnOff = {'ankleHighApexHeight','noAnkle'};
+    for m = [1 2]
         colStruc = colStrucArray.(fieldNames{m});
 
         for k = 1:numel(colStruc.direction)
@@ -38,10 +38,10 @@ for qq = 1:2 %Once with ankles on, once with ankles off
             collParam = opt.collParam;
             seeParam = opt.seeParam;
 
-            NumPerturb = 3;
+            NumPerturb = 1;
             badCounterGlobe = 0;
             tryCounter = 1;
-            while badCounterGlobe < 7 && param(colStruc.varInd) <= colStruc.varMax && param(colStruc.varInd) >= colStruc.varMin
+            while badCounterGlobe < 2 && param(colStruc.varInd) <= colStruc.varMax && param(colStruc.varInd) >= colStruc.varMin
                 opt.collParam.flag = 0;
                 while tryCounter <= NumPerturb && opt.collParam.flag <= 0
                     [DV_out, opt] = RUN_COL(opt_seed, param, collParam, seeParam); %softmax

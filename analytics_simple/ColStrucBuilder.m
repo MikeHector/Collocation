@@ -7,10 +7,11 @@ colls = 0;
 %Damping
 colStruc.direction = {'up'};
 colStruc.varName = 'c';
-colStruc.deltaVar = 1;
-colStruc.varMax = 400;
-colStruc.varMin = -1;
+colStruc.deltaVar = .01;
+colStruc.varMax = 1.5;
+colStruc.varMin = -.01;
 colStruc.var = 0; %Initial variable value
+colStruc.varInd = 2;
 ColStrucArray.Damping = colStruc;
 colls1 = (abs(colStruc.varMax) + abs(colStruc.varMin))/colStruc.deltaVar;
 colls = colls + colls1;
