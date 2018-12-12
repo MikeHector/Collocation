@@ -34,12 +34,12 @@ clear colStruc
 
 %Changing Apex Height
 %3
-colStruc.direction = {'down'};
+colStruc.direction = {'up','down'};
 colStruc.varName = 'apex_height';
 colStruc.deltaVar = .001;
-colStruc.varMax = .900001;
-colStruc.varMin = .5;
-colStruc.var = .9;
+colStruc.varMax = 1.3;
+colStruc.varMin = .7;
+colStruc.var = 1;
 colStruc.varInd = 12;
 ColStrucArray.ApexHeight = colStruc;
 colls3 = (abs(colStruc.varMax - colStruc.varMin))/colStruc.deltaVar;

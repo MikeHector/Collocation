@@ -6,7 +6,7 @@ tic
 makefile = 1; makehessian = 0; optimize = 1;
 assert(optimize == 0 || optimize == 1, 'optimize needs to be 0 or 1')
 
-dirname = 'simple_32_28_with_50_points';
+dirname = 'simple_36_28_with_full_d_cot_new_30';
 currdir = [pwd filesep];
 if makefile == 1
     %Make folder that new dynamics are going into
@@ -22,7 +22,7 @@ if makehessian ==1
     pause
 end
 %Set up collocation parameters - these are fixed for every compile
-p.N = 50;
+p.N = 30;
 p.dof = 3;
 p.cntrl_dof = 2;
 smooth = 3;

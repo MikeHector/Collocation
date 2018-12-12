@@ -33,7 +33,8 @@ function [ cost ] = OBJ_F( dv, Parameters, smooth )
         Jleg = Jleg + .5 * hk * (wkLeg(i) + wkLeg(i+1));
         Jankle = Jankle + .5 * hk * (wkAnkle(i) + wkAnkle(i+1));
     end
-    xTravel = maxZero(dv(1,end) - dv(1,1));
+    xFlight = Parameters.apex_velocity * (dv(5,end) - dv(5,1))/Parameters.g;
+    xTravel = dv(1,end) - dv(1,1) + xFlight;
     cost = (Jleg + Jankle + sum(abSmooth(ddr0)*hk*Parameters.objWeight))...
         / (Parameters.m * Parameters.g * xTravel);
 end
