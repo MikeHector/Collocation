@@ -1,0 +1,2 @@
+apex height is free in this optimization; apex velocity is fixed to param(13); implemented as a bound (dirty)
+also 30 points with ddr0 weight

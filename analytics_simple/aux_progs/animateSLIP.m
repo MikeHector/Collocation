@@ -1,16 +1,26 @@
 function animateSLIP(opt)
     f = stance2Full(opt);
-    f.theta = [linspace(pi/2,atan2(f.y(f.stanceStartN), f.x(f.stanceStartN)),f.stanceStartN),...
-           atan2(f.y(f.stanceStartN+1:f.stanceEndN),f.x(f.stanceStartN+1:f.stanceEndN)),...
-           linspace(atan2(f.y(f.stanceEndN),f.x(f.stanceEndN)),pi/2,length(f.t)-f.stanceEndN)];
+    %Fancy theta
+%     f.theta = [linspace(pi/2,atan2(f.y(f.stanceStartN), f.x(f.stanceStartN)),f.stanceStartN),...
+%            atan2(f.y(f.stanceStartN+1:f.stanceEndN),f.x(f.stanceStartN+1:f.stanceEndN)),...
+%            linspace(atan2(f.y(f.stanceEndN),f.x(f.stanceEndN)),pi/2,length(f.t)-f.stanceEndN)];
+    %Simple theta
+    thetaStance =  atan2(f.y(f.stanceStartN+1:f.stanceEndN),f.x(f.stanceStartN+1:f.stanceEndN));
+    f.theta = [thetaStance(1)* ones(1,f.stanceStartN),...
+    thetaStance,...
+    thetaStance(end) * ones(1,length(f.t)-f.stanceEndN)];
     %interpolate for smooth animation
     names = {'x','y','theta','xcop','r0','ddr0','Tankle','r'};
-    newTime = linspace(0,f.t(end),50);
+    deltaTime = .01;
+    newTime = linspace(0,f.t(end),round(f.t(end)/deltaTime));
+    tdloX = [f.x(f.stanceStartN) f.x(f.stanceEndN)];
+    tdloY = [f.y(f.stanceStartN) f.y(f.stanceEndN)];
     s =f; clear f;
+    
     for i = 1:numel(names)
         s.(names{i}) = interp1(s.t,s.(names{i}),newTime);
     end
-    %
+
     clear opt
 
     k = s.param(strcmp(s.collParam.modelParamList, 'k'));
@@ -54,6 +64,16 @@ function animateSLIP(opt)
     com = patch(x_c, y_c, 'red');
     tf_com = hgtransform('Parent', ax1);
     set(com, 'Parent', tf_com)
+    
+    %TD and LO orbs
+
+    for i = 1:2
+        theta = linspace(0, 2 * pi, 10);
+        x_c = tdloX(i) + .01 * cos(theta);
+        y_c = tdloY(i) + .01 * sin(theta);
+        patch(x_c, y_c, 'green');
+    end
+
 
     %Trajectory line
     hold on;

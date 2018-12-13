@@ -157,8 +157,8 @@ title('Percent total energy contribution from ankle')
 ylabel('Ankle energy contribution')
 xlabel('Apex Height')
 hold on; plot([.93, .93],[0,80], 'LineStyle','--','Color','r', 'LineWidth',1.4)
-hold on; plot([1.07, 1.07],[0,80], 'LineStyle','--','Color','r', 'LineWidth',1.4)
-axis([.5,1.35,0,80])
+hold on; plot([1.0, 1.0],[0,80], 'LineStyle','--','Color','r', 'LineWidth',1.4)
+axis([.7,1.3,0,70])
 
 subplot(2,1,1)
 plot(sa.var_graph,sa.groundedRunMeasure); ylabel('Time in air / Time in stance');
@@ -166,8 +166,8 @@ hold on; plot(s.var_graph,s.groundedRunMeasure);
 xlabel('Apex Height')
 title('Grounded run measure')
 hold on; plot([.93, .93],[0,2.5], 'LineStyle','--','Color','r', 'LineWidth',1.4)
-hold on; plot([1.07, 1.07],[0,2.5], 'LineStyle','--','Color','r', 'LineWidth',1.4)
-axis([.5,1.35,0,2.5])
+hold on; plot([1.0, 1.0],[0,2.5], 'LineStyle','--','Color','r', 'LineWidth',1.4)
+axis([.7,1.3,0,2.5])
 legend('With ankle', 'Without ankle')
 
 figure

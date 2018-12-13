@@ -6,7 +6,7 @@ tic
 makefile = 1; makehessian = 0; optimize = 1;
 assert(optimize == 0 || optimize == 1, 'optimize needs to be 0 or 1')
 
-dirname = 'simple_36_28_with_full_d_cot_new_30';
+dirname = 'simple_39_36_fixed_make_param_sym';
 currdir = [pwd filesep];
 if makefile == 1
     %Make folder that new dynamics are going into
@@ -31,7 +31,7 @@ C = includeConstraint(1);
 
 % Setup
 disp('Making symbols')
-[dv, vStruc, vList, Example] = makeParamSym(p, C);
+[dv, vStruc, vList, Example] = makeParamSymNew(p, C);
 disp('Done')
 
 %Turn it into dv block and p structure

@@ -1,0 +1,2 @@
+apex height and apex velocity are free in this optimization
+also 30 points with ddr0 weight

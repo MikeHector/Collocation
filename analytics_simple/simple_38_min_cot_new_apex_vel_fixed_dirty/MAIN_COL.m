@@ -19,10 +19,10 @@ saveDir = getSaveDir('DRL-PC');
 numOpts = 0;
 % optimizationID = '_NoAnkle';
 
-for qq = 1:2 %Once with ankles on, once with ankles off
+for qq = 2 %liwefwefaweawefwef %Once with ankles on, once with ankles off
     tagOnOff = {'_simpleAnkle_','_simpleNoAnkle_'};
     fileOnOff = {'ankle','noAnkle'};
-    for m = [3]
+    for m = [10]
         colStruc = colStrucArray.(fieldNames{m});
 
         for k = 1:numel(colStruc.direction)
@@ -86,4 +86,4 @@ for qq = 1:2 %Once with ankles on, once with ankles off
     end
 end
 Time = toc;
-disp(['It took ', num2str(Time),' seconds to run ', num2str(numOpts),' collocations'])
+disp(['It took ', num2str(Time),' seconds to run', num2str(numOpts),' collocations'])

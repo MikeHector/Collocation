@@ -27,7 +27,7 @@ for i = 1:length(strucc)
     results{i} = opt;
     varr(i) = opt.param(varInd);
     
-    if round(varr(i),3) == .765
+    if round(varr(i),3) == 1.15
         1+1;
         varr(i);
     end
@@ -69,6 +69,7 @@ for k = 1:length(i)
         s.tdCentripedalF(q) = results{i(k)}.param(1).*s.tdCentripedalVel(q).^2./results{i(k)}.r(1);        
         xFlight = results{i(k)}.param(13) * (results{i(k)}.dy(end) - results{i(k)}.dy(1))/ results{i(k)}.param(10);
         s.distance(q) = xFlight + results{i(k)}.x(end) - results{i(k)}.x(1);
+%         s.apexHeight(q) = results{i(k)}.apexHeight;
         
 %         costEst = (s.eLegMech(q)+s.eAnkleMech(q) +energy.ringDamp) ./ s.distance(q);
 %         [s.var_graph(q) s.cost_graph(q) - costEst]
