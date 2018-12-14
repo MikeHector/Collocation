@@ -352,7 +352,7 @@ assert(saVarU(1) == sVarU(1),'make sure these are the same')
 
 nu = 100*(sCost(1:length(saVarU)) - saCost)./sCost(1:length(saVarU));
 plot(sVarU(1:length(saVarU)), nu)
-title('Energy efficiency increase by using ankle')
+title('Percent decrease of cost of transport')
 ylabel('Percent efficiceny increase'); xlabel('Apex Height')
 
 subplot(4,1,4)
@@ -370,7 +370,7 @@ legend('No ankle','Ankle')
 
 %whatever
 figure
-wut = 'groundedRunMeasure';
+wut = 'distance';
 plot(s.var_graph,s.(wut)); hold on; plot(sa.var_graph, sa.(wut)); 
 xlabel('Apex Height'); title(wut); legend('No ankle', 'Ankle')
 
@@ -379,3 +379,42 @@ xlabel('Apex Height'); title(wut); legend('No ankle', 'Ankle')
 figure
 plot(s.xInitial(600:800),s.yInitial(600:800),'o'); hold on; plot(s.xFinal(600:800), s.yFinal(600:800),'o'); 
 xlabel('XPosition'); title('Touchdown Positions'); legend('Touchdown', 'Liftoff')
+
+
+%Sync s and sa
+[sVarU, su] = unique(s.var_graph);
+% for i = 1:fields
+%Distances v2
+figure
+subplot(4,1,1)
+plot(s.var_graph,s.distance); hold on; plot(sa.var_graph, sa.distance);
+xlabel('Apex Height'); ylabel('Distance traveled [m]'); title('Distance traveled by SLIP')
+legend('No ankle','Ankle')
+
+subplot(4,1,2)
+plot(s.var_graph,s.eLegMech + s.eAnkleMech); hold on; plot(sa.var_graph, sa.eLegMech + sa.eAnkleMech);
+xlabel('Apex Height'); ylabel('Sum of energy into system'); title('Energy In')
+legend('No ankle','Ankle')
+
+subplot(4,1,3)
+[sVarU, su] = unique(s.var_graph);
+sCost = s.cost_graph(su);
+[saVarU, sau] = unique(sa.var_graph);
+saCost = sa.cost_graph(sau);
+
+saVarU = saVarU(1:590);
+sau = sau(1:590);
+saCost = sa.cost_graph(sau);
+assert(saVarU(1) == sVarU(1),'make sure these are the same')
+
+nu = 100*(sCost(1:length(saVarU)) - saCost)./sCost(1:length(saVarU));
+plot(sVarU(1:length(saVarU)), nu)
+title('Percent decrease of cost of transport')
+ylabel('Percent efficiceny increase'); xlabel('Apex Height')
+
+subplot(4,1,4)
+plot(s.var_graph, s.rInitial); hold on; plot(sa.var_graph, sa.rInitial);
+legend('No Ankle','Ankle');
+xlabel('Apex Height');
+ylabel('Leg length on touchdown [m]');
+title('Leg lengths on touchdown')

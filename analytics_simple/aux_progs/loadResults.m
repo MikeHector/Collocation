@@ -27,7 +27,7 @@ for i = 1:length(strucc)
     results{i} = opt;
     varr(i) = opt.param(varInd);
     
-    if round(varr(i),3) == 1.15
+    if round(varr(i),5) == 1.296
         1+1;
         varr(i);
     end
@@ -62,6 +62,7 @@ for k = 1:length(i)
         energy = get_energy3(results{i(k)});
         s.eLegMech(q) = energy.leg_m;
         s.eAnkleMech(q) = energy.ankle_m;
+        s.damper(q) = energy.damper;
         s.deltaRtdLO(q) = results{i(k)}.r(end) - results{i(k)}.r(1);
         s.deltaR0tdLO(q) = results{i(k)}.r0(end) - results{i(k)}.r0(1);
         s.maxPush(q) = max(results{i(k)}.r0) - min(results{i(k)}.r0);

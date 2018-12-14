@@ -1,4 +1,4 @@
-function animateSLIP(opt)
+function animateSLIP(opt,gifIT)
     f = stance2Full(opt);
     %Fancy theta
 %     f.theta = [linspace(pi/2,atan2(f.y(f.stanceStartN), f.x(f.stanceStartN)),f.stanceStartN),...
@@ -36,18 +36,20 @@ function animateSLIP(opt)
     slipbodyanimate=figure('Name','Slip body animation');
     figure(slipbodyanimate);
     ax1 = subplot(1,7,[1 2 3 4 5 6]);
-    ax1.XLim = [-.8 .8];
-    ax1.YLim = [-.1 1.5];
-%     axis equal
+    ax1.XLim = [-1.2 1.2];
+    ax1.YLim = [-.5 1.9];
+    axis equal
 
     %apex height line
     
         %Spring Line
 %     x_l = [-.01, .01, .01, -.01];
 %     y_l = [0, 0, -s.r(1), -s.r(1)];
-    px = [0 0 .1 -.1 .1 0 0]; %px = [px, fliplr(px)];
+    px = [0 0 .05 -.05 .05 0 0]; %px = [px, fliplr(px)];
     py = [0 .3 .4 .6 .8 .9 1.2]; py = [py, fliplr(py)]./1.2;
-    px = [px + .02, fliplr(px - .02)];
+    px = [px + .01, fliplr(px - .02)];
+    
+%     px = [.3
     
     sp = patch(px, py, 'blue');
     tf_sp = hgtransform('Parent', ax1);
@@ -65,13 +67,20 @@ function animateSLIP(opt)
     tf_com = hgtransform('Parent', ax1);
     set(com, 'Parent', tf_com)
     
+    %Foot
+    px = s.param(8)/2*[-1 1 1 -1];
+    py = s.param(8)/6*[-.5 -.5 1 1];
+    foot = patch(px, py, 'black');
+    tf_foot = hgtransform('Parent', ax1);
+    set(foot, 'Parent', tf_foot);
+    
+    
     %TD and LO orbs
-
     for i = 1:2
         theta = linspace(0, 2 * pi, 10);
-        x_c = tdloX(i) + .01 * cos(theta);
-        y_c = tdloY(i) + .01 * sin(theta);
-        patch(x_c, y_c, 'green');
+        x_c = tdloX(i) + .02 * cos(theta);
+        y_c = tdloY(i) + .02 * sin(theta);
+        TDLO{i} = patch(x_c, y_c, 'green');
     end
 
 
@@ -88,8 +97,10 @@ function animateSLIP(opt)
     quivL = quiver(1,1,2,2);
     quivL.LineWidth = 2.5; quivL.AutoScale = 'off';
     quivL.MaxHeadSize = 25; quivL.Color = 'k';
-    legend([quivA, quivL],'Force from ankle torque','Acceleration of leg extension', 'location', 'northwest')
+    L = legend([quivA, quivL, TDLO{i}],'Force from ankle torque','Acceleration of leg extension','Touchdown/ liftoff point', 'location', 'northwest');
     
+    %Text for time
+    timeText = text(0,-.1,['t = ', num2str(round(s.t(1),3)), ' s'],'HorizontalAlignment','center');
     
     %     %R0 animation
     ax2 = subplot(1,7,7);
@@ -171,11 +182,10 @@ function animateSLIP(opt)
 %     ax6.YLim = [min(s.Fleg), max(s.Fleg)];
 %     title('Leg Force trajectory')
 
-
     for q = 1 %Number of times to play
         for i = 1:length(s.x)
             %Body animation stuff
-
+            
             %Repatch the spring line
 %             h(2).Vertices(3:4,2) = -(s.r(i) + 0);
             %HG transform stuff
@@ -186,6 +196,9 @@ function animateSLIP(opt)
             
             Tr0 = makehgtform('translate',[0,s.r0(i),0]);
             set(tf_r0,'Matrix',Tr0);
+            
+            Tfoot = makehgtform('translate',[s.x(i) - s.r(i)*cos(s.theta(i)), s.y(i) - s.r(i)*sin(s.theta(i)),0]);
+            set(tf_foot, 'Matrix', Tfoot);
             
             La = 5;
             quivA.XData = s.x(i) - La* s.Tankle(i) * cos(pi/2+s.theta(i));
@@ -202,7 +215,7 @@ function animateSLIP(opt)
             quivL.UData = Ll* s.x(i) * s.ddr0(i);
             quivL.VData = Ll* s.y(i) * s.ddr0(i);
 
-
+            timeText.String = ['t = ', num2str(round(newTime(i),3)), ' s'];
 %             %COP animation
 %             %Repatch the arrow                       
 %             arrow.Vertices(:,1) = arrow_move(xcop(i));
@@ -227,9 +240,16 @@ function animateSLIP(opt)
 %             leg_torque_plot.YData = s.Fleg(1:i);
 
             drawnow
-            pause(.2)
 
-
+            if gifIT == 1
+                if i == 1
+                    filename = 'newGif.gif';
+                    gif(filename,'frame',gcf);
+                elseif i > 1
+                    gif
+                end                
+            end
+            %             pause(.2)
         end
     end
 end

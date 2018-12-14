@@ -18,6 +18,7 @@ function [cost] = get_energy3(OPT_RES)
     wkLeg = @(k) abSmooth(Fleg(k) .* OPT_RES.dr0(k));
     wkAnkle = @(k) abSmooth(OPT_RES.Tankle(k) * transmission_ankle .*...
             (OPT_RES.x(k) .* OPT_RES.dy(k) - OPT_RES.y(k) .* OPT_RES.dx(k)) ./ (OPT_RES.r(k)^2));
+    
 
     for i = 1:OPT_RES.collParam.N-1
         cost_leg_m = cost_leg_m + .5 * hk* (wkLeg(i) + wkLeg(i+1));
@@ -28,6 +29,10 @@ function [cost] = get_energy3(OPT_RES)
     cost.ankle_m = cost_ankle_m;
     cost.ringDamp = sum(abSmooth(OPT_RES.ddr0)*hk*OPT_RES.param(24));
     
+    %Damper energy
+    hk = diff(OPT_RES.t)';
+    cost.damper = trapz(OPT_RES.param(2) * (OPT_RES.dr0(1:end-1) - OPT_RES.dr(1:end-1)).^2 .* hk);
+
     xFlight = OPT_RES.param(13) * (OPT_RES.dy(end) - OPT_RES.dy(1))/ g;
     xTravel = xFlight + OPT_RES.x(end) - OPT_RES.x(1);
     cost.objEst = (cost_leg_m+cost_ankle_m + cost.ringDamp) ./ (m*g*xTravel);
