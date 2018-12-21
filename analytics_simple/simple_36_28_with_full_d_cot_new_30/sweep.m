@@ -19,10 +19,13 @@ saveDir = getSaveDir('DRL-PC');
 numOpts = 0;
 % optimizationID = '_NoAnkle';
 
-for qq = 1:2 %Once with ankles on, once with ankles off
+
+for qq = 1:2
     tagOnOff = {'_simpleAnkle_','_simpleNoAnkle_'};
     fileOnOff = {'ankle','noAnkle'};
-    for m = [3]
+    
+    
+    for m = [10]
         colStruc = colStrucArray.(fieldNames{m});
 
         for k = 1:numel(colStruc.direction)
@@ -30,6 +33,8 @@ for qq = 1:2 %Once with ankles on, once with ankles off
 
             %Load baseline seed and parameters
             load(fileOnOff{qq})
+    %         load('C:\Users\mike-\Documents\DRL\slip_opt\opt_results\opt_disturbance_f_180820182234015610.mat')
+    %         load( 'C:\Users\mike-\Documents\DRL\collocation\opt_results\opt_R_leg_150820181810270730.mat')
             opt_seed = opt.X;
             param = opt.param;
             param(colStruc.varInd) = colStruc.var;

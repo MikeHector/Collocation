@@ -15,20 +15,21 @@ sa = loadResults('apex_height',1);
 
 s = loadResults('apex_height',0);
 
-varmaxplot = 2;
-varminplot = .5;
+varmaxplot = 1;
+varminplot = .9;
 energyMax = .7;
 plotName = 'Apex Height';
 
 fig = figure;
 an1 = plot(1,1,'b'); hold on; an2 = plot(1,1, 'r'); %an11 = plot(1,1,'bo'); an21 = plot(1,1,'ro');
 
-Ylim =1.2;
+
+Ylim =.04;
 % makeVref = @(t, p) plot([t, t],[Ylim,Ylim], 'LineStyle','--','Color','r', 'LineWidth',1.4);
 % an2 = makeVref(0,an1);
 % an3 = makeVref(1,an1);
 % axis([-1.2,1.2, 0, Ylim]); 
-axis([-.1,1.1, .7, Ylim]); 
+axis([-.1,1.1, 0, Ylim]); 
 title1 = title('anklesRkool');
 legend('no ankle','ankle')
 
@@ -39,9 +40,11 @@ i = 1;
 while s.var_graph(i) < varmaxplot
 
    if (s.res{i}.collParam.flag > 0) && (s.var_graph(i) > varminplot)
-
-        full = stance2Full(s.res{i});
-        ankleMax = full.param(8)/2 .*full.Fleg .* full.y ./ full.r; 
+        e = get_energy3(s.res{i},0);
+%           an1.XData = s.res{i}.t(1:end-1);
+%           an1.YData = e.cumIn';
+%         full = stance2Full(s.res{i});
+%         ankleMax = full.param(8)/2 .*full.Fleg .* full.y ./ full.r; 
 %         an1.XData = full.t./full.t(end);
 %         an1.XData = s.res{i}.x;
 %         an1.XData = full.x;
@@ -69,13 +72,14 @@ while s.var_graph(i) < varmaxplot
 
         
         fullsa = stance2Full(sa.res{i});
-
+%         an2.XData = s.res{i}.t(1:end-1);
+%         an2.YData = e.cumOut';
         an2.XData = fullsa.t./fullsa.t(end);
 %         an2.XData = sa.res{i}.x;
 %         an2.XData = fullsa.x;
-%         an2.YData = fullsa.Tankle;
+        an2.YData = fullsa.Tankle;
 %         an2.YData = fullsa.r;
-        an2.YData = fullsa.y;
+%         an2.YData = fullsa.y;
 %         an2.YData = sa.res{i}.y;
         
 %         an21.XData = [fullsa.t(full.stanceStartN)./full.t(end), fullsa.t(full.stanceEndN)./full.t(end)];
@@ -381,40 +385,156 @@ plot(s.xInitial(600:800),s.yInitial(600:800),'o'); hold on; plot(s.xFinal(600:80
 xlabel('XPosition'); title('Touchdown Positions'); legend('Touchdown', 'Liftoff')
 
 
-%Sync s and sa
-[sVarU, su] = unique(s.var_graph);
-% for i = 1:fields
+
+
 %Distances v2
 figure
-subplot(4,1,1)
-plot(s.var_graph,s.distance); hold on; plot(sa.var_graph, sa.distance);
+subplot(5,2,[1 2])
+dp1 = plot(s.var_graph,s.distance); hold on; plot(sa.var_graph, sa.distance);
 xlabel('Apex Height'); ylabel('Distance traveled [m]'); title('Distance traveled by SLIP')
+drawthelines(dp1)
+text(.8, 1.6,'1','FontSize',30,'interpreter','latex','HorizontalAlignment','center');
+text(.935, 1.6,'2','FontSize',30,'interpreter','latex','HorizontalAlignment','center');
+text(.968, 1.6,'3','FontSize',30,'interpreter','latex','HorizontalAlignment','center');
+text(1.15, 1.6,'4','FontSize',30,'interpreter','latex','HorizontalAlignment','center');
 legend('No ankle','Ankle')
 
-subplot(4,1,2)
-plot(s.var_graph,s.eLegMech + s.eAnkleMech); hold on; plot(sa.var_graph, sa.eLegMech + sa.eAnkleMech);
+
+subplot(5,2,[3 4])
+mgd = s.res{1}.param(1)*s.res{1}.param(10)*s.distance;
+mgda = sa.res{1}.param(1)*sa.res{1}.param(10)*sa.distance;
+dp2 = plot(s.var_graph,s.cost_graph.*mgd); hold on; plot(sa.var_graph, sa.cost_graph .* mgda);
 xlabel('Apex Height'); ylabel('Sum of energy into system'); title('Energy In')
+drawthelines(dp2)
 legend('No ankle','Ankle')
 
-subplot(4,1,3)
-[sVarU, su] = unique(s.var_graph);
-sCost = s.cost_graph(su);
-[saVarU, sau] = unique(sa.var_graph);
-saCost = sa.cost_graph(sau);
-
-saVarU = saVarU(1:590);
-sau = sau(1:590);
-saCost = sa.cost_graph(sau);
-assert(saVarU(1) == sVarU(1),'make sure these are the same')
-
-nu = 100*(sCost(1:length(saVarU)) - saCost)./sCost(1:length(saVarU));
-plot(sVarU(1:length(saVarU)), nu)
+subplot(5,2,[5 6])
+nu = 100*(s.cost_graph - sa.cost_graph)./s.cost_graph;
+dp0 = plot(s.var_graph, nu); hold on;
+drawthelines(dp0)
 title('Percent decrease of cost of transport')
 ylabel('Percent efficiceny increase'); xlabel('Apex Height')
 
-subplot(4,1,4)
-plot(s.var_graph, s.rInitial); hold on; plot(sa.var_graph, sa.rInitial);
+subplot(5,2,[7 8])
+dp3 = plot(s.var_graph, s.rInitial); hold on; plot(sa.var_graph, sa.rInitial);
+drawthelines(dp3)
 legend('No Ankle','Ankle');
 xlabel('Apex Height');
 ylabel('Leg length on touchdown [m]');
 title('Leg lengths on touchdown')
+
+subplot(5,2,9)
+lenVar = floor(length(s.var_graph)*.45);
+
+dp4 = plot(s.var_graph, s.yInitial); hold on; plot(sa.var_graph, sa.yInitial);
+plot(s.var_graph(1:lenVar),s.var_graph(1:lenVar),'b--')
+drawthelines(dp4)
+legend('No Ankle','Ankle','Apex height','Location','northwest');
+xlabel('Apex Height');
+ylabel('Height [m]');
+title('Touchdown height')
+
+subplot(5,2,10)
+lenVar = floor(length(s.var_graph)*.45);
+dp5 = plot(s.var_graph, s.yFinal); hold on; plot(sa.var_graph, sa.yFinal);
+plot(s.var_graph(1:lenVar),s.var_graph(1:lenVar),'b--')
+drawthelines(dp5)
+legend('No Ankle','Ankle','Apex height','Location','northwest');
+xlabel('Apex Height');
+ylabel('Height [m]');
+title('Liftoff height')
+
+
+figure
+nu = 100*(s.cost_graph - sa.cost_graph)./s.cost_graph;
+plot(.9291,2.8,'bo');
+hold on; plot(.9272,2.65,'rs')
+dp0 = plot(s.var_graph, nu); hold on;
+drawthelines(dp0)
+text(.8, 1.6,'1','FontSize',30,'interpreter','latex','HorizontalAlignment','center');
+text(.935, 1.6,'2','FontSize',30,'interpreter','latex','HorizontalAlignment','center');
+text(.968, 1.6,'3','FontSize',30,'interpreter','latex','HorizontalAlignment','center');
+text(1.15, 1.6,'4','FontSize',30,'interpreter','latex','HorizontalAlignment','center');
+title('Percent decrease of cost of transport')
+ylabel('Percent efficiceny increase'); xlabel('Apex Height')
+text(1.15,8,'\% Decrease in $COT = 100 * \frac{COT_{No \ Ankle} - COT_{Ankle}}{COT_{No \ Ankle}}$','Interpreter','latex','FontSize',20,'HorizontalAlignment','center')
+text(.8,8,'$COT = \frac{\int \ |E_{in}| \ dt}{mgd}$','Interpreter','latex','FontSize',20,'HorizontalAlignment','center')
+legend('Optimal with ankle','Optimal without ankle')
+
+%Zone 2
+figure
+zInds = find(round(s.var_graph,4) == .926);
+zInds = zInds:find(round(s.var_graph,4) == .948);
+subplot(2,2,1)
+mgd = s.res{1}.param(1)*s.res{1}.param(10)*s.distance;
+mgda = sa.res{1}.param(1)*sa.res{1}.param(10)*sa.distance;
+plot(s.var_graph(zInds),s.cost_graph(zInds).*mgd(zInds)); hold on; 
+plot(sa.var_graph(zInds), sa.cost_graph(zInds) .* mgda(zInds));
+xlabel('Apex Height'); ylabel('Energy [J]'); title('Energy Dissipated')
+legend('No Ankle','Ankle')
+
+subplot(2,2,2)
+plot(s.var_graph(zInds), s.distance(zInds)); hold on;
+plot(sa.var_graph(zInds), sa.distance(zInds));
+xlabel('Apex Height'); ylabel('Distance [m]'); title('Distance traveled by SLIP')
+legend('No Ankle','Ankle')
+
+subplot(2,2,3)
+plot(s.var_graph(zInds), s.rInitial(zInds)); hold on;
+plot(sa.var_graph(zInds), sa.rInitial(zInds));
+xlabel('Apex Height'); ylabel('Length [m]'); title('Leg length on touchdown')
+legend('No Ankle','Ankle')
+
+subplot(2,2,4)
+plot(s.var_graph(zInds), s.tdA(zInds)); hold on;
+plot(sa.var_graph(zInds), sa.tdA(zInds));
+xlabel('Apex Height'); ylabel('Angle [rad]'); title('Touchdown angle')
+legend('No Ankle','Ankle')
+
+%Zone 3
+figure
+zInds = find(round(s.var_graph,4) == .948);
+zInds = zInds:find(round(s.var_graph,4) == .99);
+subplot(2,2,1)
+mgd = s.res{1}.param(1)*s.res{1}.param(10)*s.distance;
+mgda = sa.res{1}.param(1)*sa.res{1}.param(10)*sa.distance;
+plot(s.var_graph(zInds),s.cost_graph(zInds).*mgd(zInds)); hold on; 
+plot(sa.var_graph(zInds), sa.cost_graph(zInds) .* mgda(zInds));
+xlabel('Apex Height'); ylabel('Energy [J]'); title('Energy Dissipated')
+legend('No Ankle','Ankle')
+
+subplot(2,2,2)
+plot(s.var_graph(zInds), s.distance(zInds)); hold on;
+plot(sa.var_graph(zInds), sa.distance(zInds));
+xlabel('Apex Height'); ylabel('Distance [m]'); title('Distance traveled by SLIP')
+legend('No Ankle','Ankle')
+
+subplot(2,2,3)
+plot(s.var_graph(zInds), s.rInitial(zInds)); hold on;
+plot(sa.var_graph(zInds), sa.rInitial(zInds));
+xlabel('Apex Height'); ylabel('Length [m]'); title('Leg length on touchdown')
+legend('No Ankle','Ankle')
+
+subplot(2,2,4)
+plot(s.var_graph(zInds), s.yInitial(zInds)); hold on;
+plot(sa.var_graph(zInds), sa.yInitial(zInds));
+xlabel('Apex Height'); ylabel('Height [m]'); title('Touchdown height')
+legend('No Ankle','Ankle')
+
+%Policy transitions graph
+figure;
+z1end = .926; z1x = -sqrt(1-z1end^2);
+z2end = .948; z2x = -sqrt(1-z2end^2);
+z3end = .98;  z3x = -sqrt(1-z3end^2);
+t = linspace(0.001,pi-.001);
+horLine = plot([-1 1], [0 0]); hold on;
+verLine = plot([0 0], [0 1]);
+cirLine = plot(cos(t),sin(t));
+z2 = fill([0 z1x z2x], [0, z1end z2end],'g','FaceAlpha',.2);
+z3 = fill([0 z2x z3x], [0, z2end z3end],'b','FaceAlpha',.2);
+tranLine = plot([0 z2x], [0, z2end],'r--','LineWidth',2);
+hold on; plot(sa.xInitial(1:250),sa.yInitial(1:250),'k','LineWidth',2)
+hold on; plot(s.xInitial(1:248),s.yInitial(1:248),'b','LineWidth',2)
+axis equal
+
+

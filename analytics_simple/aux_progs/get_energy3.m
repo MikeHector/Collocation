@@ -1,4 +1,4 @@
-function [cost] = get_energy3(OPT_RES)
+function [cost] = get_energy3(OPT_RES, plotifone)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
     Tstance = OPT_RES.Tstance;
@@ -17,7 +17,7 @@ function [cost] = get_energy3(OPT_RES)
     Fleg = k * (OPT_RES.r0 - OPT_RES.r) + c *(OPT_RES.dr0 - OPT_RES.dr);
     wkLeg = @(k) abSmooth(Fleg(k) .* OPT_RES.dr0(k));
     wkAnkle = @(k) abSmooth(OPT_RES.Tankle(k) * transmission_ankle .*...
-            (OPT_RES.x(k) .* OPT_RES.dy(k) - OPT_RES.y(k) .* OPT_RES.dx(k)) ./ (OPT_RES.r(k)^2));
+            (OPT_RES.x(k) .* OPT_RES.dy(k) - OPT_RES.y(k) .* OPT_RES.dx(k)) ./ (OPT_RES.r(k).^2));
     
 
     for i = 1:OPT_RES.collParam.N-1
@@ -32,6 +32,11 @@ function [cost] = get_energy3(OPT_RES)
     %Damper energy
     hk = diff(OPT_RES.t)';
     cost.damper = trapz(OPT_RES.param(2) * (OPT_RES.dr0(1:end-1) - OPT_RES.dr(1:end-1)).^2 .* hk);
+    cumDamper = cumtrapz(OPT_RES.param(2) * (OPT_RES.dr0(1:end-1) - OPT_RES.dr(1:end-1)).^2 .* hk);
+    cumLeg = cumtrapz(hk.*wkLeg(1:length(OPT_RES.t)-1));
+    cumAnkle = cumtrapz(hk.*wkAnkle(1:length(OPT_RES.t)-1));
+    cost.cumIn = cumLeg + cumAnkle;
+    cost.cumOut = cumDamper;
 
     xFlight = OPT_RES.param(13) * (OPT_RES.dy(end) - OPT_RES.dy(1))/ g;
     xTravel = xFlight + OPT_RES.x(end) - OPT_RES.x(1);

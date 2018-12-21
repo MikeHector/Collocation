@@ -27,7 +27,7 @@ for i = 1:length(strucc)
     results{i} = opt;
     varr(i) = opt.param(varInd);
     
-    if round(varr(i),5) == 1.296
+    if round(varr(i),5) == .98
         1+1;
         varr(i);
     end
@@ -63,6 +63,8 @@ for k = 1:length(i)
         s.eLegMech(q) = energy.leg_m;
         s.eAnkleMech(q) = energy.ankle_m;
         s.damper(q) = energy.damper;
+%         s.cumIn{q} = energy.cumIn;
+%         s.cumOut{q} = energy.cumOut;
         s.deltaRtdLO(q) = results{i(k)}.r(end) - results{i(k)}.r(1);
         s.deltaR0tdLO(q) = results{i(k)}.r0(end) - results{i(k)}.r0(1);
         s.maxPush(q) = max(results{i(k)}.r0) - min(results{i(k)}.r0);
@@ -71,9 +73,9 @@ for k = 1:length(i)
         xFlight = results{i(k)}.param(13) * (results{i(k)}.dy(end) - results{i(k)}.dy(1))/ results{i(k)}.param(10);
         s.distance(q) = xFlight + results{i(k)}.x(end) - results{i(k)}.x(1);
 %         s.apexHeight(q) = results{i(k)}.apexHeight;
-        
-%         costEst = (s.eLegMech(q)+s.eAnkleMech(q) +energy.ringDamp) ./ s.distance(q);
-%         [s.var_graph(q) s.cost_graph(q) - costEst]
+
+        costEst = (energy.leg_m + energy.ankle_m + energy.ringDamp) ./ s.distance(q);
+        [s.var_graph(q) s.cost_graph(q) - costEst 100*energy.ringDamp/s.cost_graph(q)];
         s.filename{q} = results{i(k)}.filename;
         q = q+1;
     end

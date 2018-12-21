@@ -1,15 +1,13 @@
 % MHector
-% 4.26.18
-% Collocation of slip through stance; v2 includes stance duration as a
-% decision variable
-function [optimized, opt_res] = RUN_COL(seed, modelParam, collParam, seeParam) %TD_angle should be nan unless it is dictated
-%     assert(length(seed) == param.N-1,'Seed was not the expected dimension')
-%     assert(param.Nstance+param.Nflight == param.N, 'Collocation points of stance and flight do not add up to param.N!')
+% 12.20.18
+% Collocation of slip through stance
+function [opt_res] = runOpt(opt)
+    seed = opt.X; modelParam = opt.param; collParam = opt.collParam; seeParam = opt.seeParam;
 
-%     %Cost function
+    %Cost function
     cost_func = @(x) SymObjFunc(x, modelParam);
-% 
-%     %Set up nonlinear constraint (which we'll be calling a lot)
+
+    %Set up nonlinear constraint (which we'll be calling a lot)
     nonlcon = @(x) SymConFunc(x, modelParam);
     
 
@@ -43,7 +41,7 @@ function [optimized, opt_res] = RUN_COL(seed, modelParam, collParam, seeParam) %
 
     
     %Optimizer parameters
-    collParam.options = optimoptions('fmincon','Display','iter','MaxFunctionEvaluations',20000,...
+    collParam.options = optimoptions('fmincon','Display','None','MaxFunctionEvaluations',20000,...
                     'MaxIterations',15000, 'ConstraintTolerance', 1e-8,...
                     'UseParallel', true, 'OptimalityTolerance',1e-8, ...
                     'SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,...

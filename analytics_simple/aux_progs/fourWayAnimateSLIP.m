@@ -1,4 +1,4 @@
-function s = animateSLIP(opt,gifIT)
+function animateSLIP(opt,gifIT)
     f = stance2Full(opt);
     %Fancy theta
 %     f.theta = [linspace(pi/2,atan2(f.y(f.stanceStartN), f.x(f.stanceStartN)),f.stanceStartN),...

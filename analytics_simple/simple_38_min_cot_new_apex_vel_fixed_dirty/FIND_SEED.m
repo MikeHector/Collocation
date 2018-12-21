@@ -6,7 +6,7 @@
 %solution as a seed for the next optimization
 clear; clc;
 
-filename = 'noAnkle';
+filename = 'ankle';
 load(filename)
 opt_seed = opt.X;
 param = opt.param;  
