@@ -11,6 +11,173 @@ classdef colls
     end
     
     methods
+        
+        function c = dumbRefine(c)
+            while 2 > 1
+                c.grid{1}.courseMax = c.grid{1}.courseMax/2.1;
+                c.grid{2}.courseMax = c.grid{2}.courseMax/2.1;
+                c = c.updateGridList;
+                c = c.updateGridColls;
+            end
+        end
+        
+        
+        function c = sweepColls(c)
+            %sweepColls Load in the grid, sweep up and down until nothing
+            %changes
+            
+        end
+            
+            
+        
+        
+        function c = refineMesh(c)
+            %refineMesh Update grid parameters to refine mesh
+        end
+        
+        
+        function c = updateGridColls(c)
+            %updateGridColls Look at grid property + ankle.var1 & var2,
+            %identify missing colls, find a close seed, create those colls
+            
+            %Compare grid and colls to find discrepencies
+            d = missingGridPoints(c);
+            
+            for ana = {'ankle','noAnkle'}
+                %Go through d, findNearestSeed, runColl from that seed
+                for p = 1:numel(d)
+
+                    %Rename stuff for clarity
+                    var1_temp = d{p}(1);
+                    var2_temp = d{p}(2);
+
+                    %Load nearby seed
+                    seed = c.findNearestSeed(var1_temp,var2_temp,ana{1});
+                    
+                    %Change to desired var values
+                    seed.param(c.grid{1}.varInd) = var1_temp;
+                    seed.param(c.grid{1}.varInd) = var1_temp;
+
+                    %Run collocation
+                    c.collocation(seed);
+                end %missing grid list
+            end %ankle or noAnkle
+        end
+        
+        function d = missingGridPoints(c)
+            %missingGridPoints Returns difference in saved colls and grid
+            %The difference returned is a struct containing the missing
+            %grid points
+            
+            %Check the saves
+            c = c.loadSaves;
+            
+            %Check some other stuff
+            assert(numel(c.ankle) == numel(c.noAnkle),'Grids of ankle and noAnkle do not much')
+            assert(unique(c.ankle.var1 == c.noAnkle.var1) == 1,'Grid mismatch - var1')
+            assert(unique(c.ankle.var2 == c.noAnkle.var2) == 1,'Grid mismatch - var2')
+            
+            %Find the differences between unique saved colls and grid
+            var1Diff = setdiff(c.grid{1}.list,unique(c.ankle.var1));
+            var2Diff = setdiff(c.grid{2}.list,unique(c.ankle.var2));
+            
+            count = 1;
+            for i = 1:length(var2Diff)
+                for j = 1:length(var1Diff)
+                    d{count} = [var1Diff(j), var2Diff(i)];
+                    count = count + 1;
+                end
+            end
+            
+            if numel(var1Diff) + numel(var2Diff) == 0
+                disp('No missing grid points')
+                d = {};
+            end
+            
+        end
+        
+        function seed = findNearestSeed(c, var1, var2, ankleSwitch)
+            %findNearestSeed Returns the seed struc that is closest to
+            %input var1 and var2. ankleSwitch should be 'ankle' or
+            %'noAnkle'
+            
+            %Check the saves
+            c = c.loadSaves;
+
+            %Mesh the grid
+%             [var1Grid, var2Grid] = meshgrid(c.grid{1}.list,c.grid{2}.list);
+            var1Colls = unique(c.ankle.var1);
+            var2Colls = unique(c.ankle.var2);
+            [var1Grid, var2Grid] = meshgrid(var1Colls,var2Colls);
+            
+            %Make a matrix of 2 norm dist from each entry in matrix
+            norms = sqrt((var1Grid - var1).^2 + (var2Grid - var2).^2);
+            
+            %Find the mins
+            minNorm = min(min(norms)); %Find the minimum of the distances
+            [var2_listInd,var1_listInd] = find(norms == minNorm); %Find list indicies of min distance
+            
+            %Return the closest opt struc
+            seed = c.findColl(var1Colls(var1_listInd), var2Colls(var2_listInd), ankleSwitch);
+        end
+        
+        function c = updateGridList(c)
+            %refineColls This method looks at properties grid and max/mins
+            %of ankle/noAnkle vars, makes changes to grid.list
+            c = loadSaves(c); %load in the saves
+            
+            for i = 1:2
+                assert(c.grid{i}.max > c.grid{i}.min,'grid max must be greater than grid min')
+            end
+            
+            %Step 1: Check min/max bounds
+            %Mins
+            if min(c.ankle.var1) > c.grid{1}.min
+                %Modify list
+                listMod = linspace(c.grid{1}.min, min(c.ankle.var1),ceil((min(c.ankle.var1)-c.grid{1}.min)/c.grid{1}.courseMax)+1);
+                c.grid{1}.list = [listMod(1:end-1), c.grid{1}.list];
+            end
+            if min(c.ankle.var2) > c.grid{2}.min
+                %Modify list
+                listMod = linspace(c.grid{2}.min, min(c.ankle.var2),ceil((min(c.ankle.var1)-c.grid{2}.min)/c.grid{2}.courseMax)+1);
+                c.grid{2}.list = [listMod(1:end-1), c.grid{2}.list];
+            end
+            %Maxes
+            if max(c.ankle.var1) < c.grid{1}.max
+                %Modify list
+                listMod = linspace(max(c.ankle.var1),c.grid{1}.max,ceil((c.grid{1}.max-max(c.ankle.var1))/c.grid{1}.courseMax)+1);
+                c.grid{1}.list = [c.grid{1}.list, listMod(2:end)];
+            end
+            if max(c.ankle.var2) < c.grid{2}.max
+                %Modify list
+                listMod = linspace(max(c.ankle.var2),c.grid{2}.max,ceil((c.grid{2}.max-max(c.ankle.var2))/c.grid{2}.courseMax)+1);
+                c.grid{2}.list = [c.grid{2}.list, listMod(2:end)];
+            end
+            
+            %Step 2: Update grid based on max courseness (courseMax)
+            %Dumb approach: while it's not at the correct courseness, split
+            %the difference between points
+            v{1} = c.grid{1}.list;
+            v{2} = c.grid{2}.list;
+            for i = 1:2
+                while round(max(diff(v{i})),4) > round(c.grid{i}.courseMax,4)
+                    pointsToAdd = diff(v{i})/2 + v{i}(1:end-1); %make new points
+                    v{i} = sort([c.grid{i}.list, pointsToAdd]); %append the new points and sort
+                end
+                c.grid{i}.list = v{i};
+            end
+            
+            %Step 3: Update maxes/mins/courseness
+            v{1} = c.grid{1}.list;
+            v{2} = c.grid{2}.list;
+            for i = 1:2
+                c.grid{i}.max = max(v{i});
+                c.grid{i}.min = min(v{i});
+                c.grid{i}.courseMax = max(diff(v{i}));
+            end
+        end
+            
+        
         function c = initialize(c)
            %Initialize Builds grid, loads save directory, adds aux progs to
            %path
@@ -18,6 +185,41 @@ classdef colls
             c = c.getSaveDir;
             c = c.addAuxProgs;
             c = c.loadSaves;
+        end
+        
+        function opt = collocation(c, opt)
+            %collocation Runs collocation based on opt and seed structure.
+            %Seed structure sould be close to opt, but slightly different
+            
+            %Set counters
+            numPerturb = 3;
+            tryCounter = 1;
+            goAgain = 1;
+            
+            while tryCounter <= numPerturb && goAgain ~= 0
+
+                %Run collocation
+                opt = runOpt(opt);
+                tryCounter = tryCounter + 1;
+
+                %Perturb it if it hasn't converged                    
+                if opt.collParam.flag <= 0 && tryCounter <= numPerturb
+                    opt.X = awgn(opt.X,50);
+                end
+
+                %Save it if it's good
+                if opt.collParam.flag > 0
+                    uniqueID = string(datetime, 'dMMyHHmmssSSSS');
+                    if opt.collParam.ankles_on == 1
+                        ankleTag = 'ankle_';
+                    elseif opt.collParam.ankles_on == 0
+                        ankleTag = 'noAnkle_';
+                    end
+                    filename = strcat('opt_', ankleTag, uniqueID);
+                    save(strcat(c.saveDir,'\',filename),'opt');
+                    goAgain = 0;
+                end %save if good
+            end %while goAgain ~= 0            
         end
         
         function c = sweepLine(c, gridSweepInd, sweepVarList, gridConstInd, constVarVal, seed)
@@ -38,51 +240,20 @@ classdef colls
             opt = seed;
             opt.collParam.flag = 0; %Little hack to get the loop to start
             
-            numPerturb = 3; %The loop will try 3 times to get a single coll to converge
             for j = 1:2
                 list = sweepList{j};
                 for i = 1:length(list)
-                    %Zero out counters
-                    tryCounter = 1;
-                    while tryCounter <= numPerturb && opt.collParam.flag <= 0
-                        %Set the new sweep parameter (collocation struct
-                        %currently is now not optimal - it's slightly perturbed)
-                        [opt.param(c.grid{gridSweepInd}.varInd), list(i)]
-                        opt.param(c.grid{gridSweepInd}.varInd) = list(i);
-
-                        
-                        %Run collocation to fix it
-                        opt = runOpt(opt);
-                        
-                        tryCounter = tryCounter + 1;
-                        %Perturb it if it hasn't converged                    
-                        if opt.collParam.flag <= 0 && tryCounter <= numPerturb
-                            opt.X = awgn(opt.X,50);
-                        end
-
-                        %Save it if it's good
-                        if opt.collParam.flag > 0
-                            uniqueID = string(datetime, 'dMMyHHmmssSSSS');
-                            if opt.collParam.ankles_on == 1
-                                ankleTag = 'ankle_';
-                            elseif opt.collParam.ankles_on == 0
-                                ankleTag = 'noAnkle_';
-                            end
-                            filename = strcat('opt_', ankleTag, uniqueID);
-                            save(strcat(c.saveDir,'\',filename),'opt');
-                        end %save if good
-                    end %while it hasn't converged
-                    opt.collParam.flag = 0; %To make the loop start
-                end %for every var change in upList or downList
-                opt = seed; %Bring the seed back to nominal value
-                opt.collParam.flag = 0; %To make the loop start
+                    %Set the new sweep parameter (collocation struct
+                    %currently not optimal - it's slightly perturbed)
+                    opt.param(c.grid{gridSweepInd}.varInd) = list(i);
+                    opt = collocation(c, opt);
+                end %for every var change in upList and downList
+                opt = seed; %Bring the seed back to nominal value and restart upList/downlist
             end %for both lists in full variable sweep
         end %function
         
         function c = sweepInitialGrid(c)
-            %sweepGrid Sweep the full grid
-            %Get the save directory
-            c = c.getSaveDir;
+            %sweepGrid Sweep the full grid starting from nominals
             
             ankleTag = {'ankle','noAnkle'};
             for anklesOnOff = [1,2]
@@ -187,7 +358,7 @@ classdef colls
                             varr(i);
                         end
                     end
-                    [var_sorted,i] = sort(varr); %sort by var1
+                    [~,i] = sort(varr); %sort by var1
 
                     q=1;
                     for k = 1:length(i)
@@ -244,10 +415,10 @@ classdef colls
             end %For ankle or noAnkle
         end 
         
-        function c = gridCheck(c)
-            %checkGrid If grid does not match desired courseness, add
-            %points
-        end
+%         function c = gridCheck(c)
+%             %checkGrid If grid does not match desired courseness, add
+%             %points
+%         end
         
         function c = gridSet(c)
             %setGrid setup grid structure
@@ -266,7 +437,7 @@ classdef colls
             g.varInd = 13;
             g.nom = 1;
             g.min = .4;
-            g.max = 1.5;
+            g.max = 1.2;
             g.courseMax = .3;
             listLow = linspace(g.min,g.nom,ceil((g.nom-g.min)/g.courseMax)+1);
             listHigh = linspace(g.nom,g.max,ceil((g.nom-g.min)/g.courseMax)+1);
@@ -274,13 +445,40 @@ classdef colls
             c.grid{2} = g;
         end
         
+        function c = visualize(c)
+            %Simple, let's just look at the CoT for ankle
+            
+            %Mesh the grid
+            [X,Y] = meshgrid(unique(c.ankle.var1),unique(c.ankle.var2));
+            
+            %Assign the CoT to each point
+            for i = 1:size(X,1) %Down the row
+                for j=1:size(X,2) %Down the column
+                    Xtemp = X(i,j); Ytemp = Y(i,j);
+                    costInd = (c.ankle.var1 == Xtemp) & (c.ankle.var2 == Ytemp);
+                    CoT_ankle(i,j) = c.ankle.cost(costInd);
+                    CoT_noAnkle(i,j) = c.noAnkle.cost(costInd);
+                end
+            end
+            percentDecreaseCoT = 100*(CoT_noAnkle - CoT_ankle)./CoT_noAnkle;
+            figure;
+            surf(X,Y,percentDecreaseCoT);
+        end
+        
         function c = addAuxProgs(c)
-            addpath('C:\Users\DRL-Valkyrie\Google Drive\DRL- Mike Hector\Collocation\analytics_simple\aux_progs');
+            if strcmp(pwd,'C:\Users\Mike\Google Drive\DRL- Mike Hector\Collocation\analytics_simple\simple_36_28_with_full_d_cot_new_30')
+                addpath('C:\Users\Mike\Google Drive\DRL- Mike Hector\Collocation\analytics_simple\aux_progs');
+            elseif strcmp(pwd,'C:\Users\DRL-Valkyrie\Google Drive\DRL- Mike Hector\Collocation\analytics_simple\simple_36_28_with_full_d_cot_new_30')
+                addpath('C:\Users\DRL-Valkyrie\Google Drive\DRL- Mike Hector\Collocation\analytics_simple\aux_progs\');
+            end
         end
 
         function c = getSaveDir(c)
-            c.saveDir = 'C:\Users\DRL-Valkyrie\Google Drive\CollocationResults\absIntFVobj_sweep_apex_height_vel';
+            if strcmp(pwd,'C:\Users\Mike\Google Drive\DRL- Mike Hector\Collocation\analytics_simple\simple_36_28_with_full_d_cot_new_30')
+                c.saveDir = 'C:\Users\Mike\Google Drive\CollocationResults\absIntFVobj_sweep_apex_height_vel';
+            elseif strcmp(pwd,'C:\Users\DRL-Valkyrie\Google Drive\DRL- Mike Hector\Collocation\analytics_simple\simple_36_28_with_full_d_cot_new_30')
+                c.saveDir = 'C:\Users\DRL-Valkyrie\Google Drive\CollocationResults\absIntFVobj_sweep_apex_height_vel';
+            end
         end
     end
 end
-

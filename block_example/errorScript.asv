@@ -1,0 +1,9 @@
+clear; close all;
+load('trapzRes.mat');
+[t,x,c,f] = interpolate(opt,F,p);
+
+xInterp = x;
+dxInertp = 
+% for i =1:length(t)
+%     xInterp = Dyn(
+% 
