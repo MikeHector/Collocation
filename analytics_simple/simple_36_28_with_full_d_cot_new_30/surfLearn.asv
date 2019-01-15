@@ -1,0 +1,9 @@
+%Test out some stuff with plotting surfaces
+x = [1 2 3 4];
+y = .1*x;
+
+[X Y] = meshgrid(x,y);
+
+Z= X.*Y;
+surf(x,y,Z);
+

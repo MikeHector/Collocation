@@ -19,8 +19,9 @@ function [ cost ] = OBJ_F_absFV( dv, Parameters, smooth )
     dr0 = dv(6,:);
     dr = (x .* dx + y .* dy) ./ r;
     Fleg = Parameters.k * (r0 - r) + Parameters.c * (dr0 - dr);
-    wkLeg = @(k) abSmooth(Fleg(k) .* dr0(k));
-    wkAnkle = @(k) abSmooth(Tankle(k) * Parameters.transmission_ankle .*...
+    Tm = -(Parameters.i_motor*Parameters.transmission*ddr0;
+    wkLeg = @(k) maxXzero(Fleg(k) .* dr0(k) + );
+    wkAnkle = @(k) maxXzero(Tankle(k) * Parameters.transmission_ankle .*...
             (x(k) .* dy(k) - y(k) .* dx(k)) ./ (r(k)^2));
     Jleg = 0;
     Jankle = 0;

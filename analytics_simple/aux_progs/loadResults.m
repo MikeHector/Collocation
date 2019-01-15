@@ -73,6 +73,7 @@ for k = 1:length(i)
         xFlight = results{i(k)}.param(13) * (results{i(k)}.dy(end) - results{i(k)}.dy(1))/ results{i(k)}.param(10);
         s.distance(q) = xFlight + results{i(k)}.x(end) - results{i(k)}.x(1);
 %         s.apexHeight(q) = results{i(k)}.apexHeight;
+        s.full{q} = full;
 
         costEst = (energy.leg_m + energy.ankle_m + energy.ringDamp) ./ s.distance(q);
         [s.var_graph(q) s.cost_graph(q) - costEst 100*energy.ringDamp/s.cost_graph(q)];

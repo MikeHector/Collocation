@@ -1,4 +1,0 @@
-Simple 18 - motor model
-Smoothing function epsilon .001
-Number of knots 30
-obj func = int(max(0,F*v) + RT^2)

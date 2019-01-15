@@ -6,7 +6,7 @@
 %solution as a seed for the next optimization
 clear; clc;
 
-filename = 'seedC_TD';
+filename = 'noAnkleNoDamp';
 load(filename)
 opt_seed = opt.X;
 param = opt.param;  

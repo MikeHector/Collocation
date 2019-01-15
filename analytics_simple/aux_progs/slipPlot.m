@@ -10,9 +10,9 @@ function [] = slipPlot(opt)
     %t vs r0
     %t vs ddr0
     %t vs Tankle
-    plotI = {'y','x','r0','ddr0','Tankle'};
-    t = {'Center of mass height','Center of mass horizontal position','Leg extension, $r_0$','Leg acceleration, $\ddot{r}_{0}$ (control input)',' $\tau_{Ankle}$ (control input)'};
-    y = {'Height, m','Position, m','Position, m', 'Acceleration, $\frac{m}{s^{2}}$','Torque, Nm'};
+    plotI = {'y','x','r0','ddr0','Tankle','Fleg'};
+    t = {'Center of mass height','Center of mass horizontal position','Leg extension, $r_0$','Leg acceleration, $\ddot{r}_{0}$ (control input)',' $\tau_{Ankle}$ (control input)','Ground Reaction Force'};
+    y = {'Height, m','Position, m','Position, m', 'Acceleration, $\frac{m}{s^{2}}$','Torque, Nm','Force, N'};
     
 %     plotI = {'dr0','ddr0'};
 %     t = {'Leg velocity, $\dot{r}_{0}$','Leg acceleration, $\ddot{r}_{0}$ (control input)'};

@@ -1,4 +1,0 @@
-f = {'x','y','r0','dx','dy','dr0','ddr0','Tankle'};
-
-for i = 1:numel(f)
-    newRow =-opt.(f{i})

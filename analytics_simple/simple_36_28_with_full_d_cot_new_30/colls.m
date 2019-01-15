@@ -7,124 +7,250 @@ classdef colls
         noAnkle
         ankle
         saveDir
-        grid        
+        grid   
+        points
+        utility
     end
     
-    methods
-        
-        function c = dumbRefine(c)
-            while 2 > 1
-                c.grid{1}.courseMax = c.grid{1}.courseMax/2.1;
-                c.grid{2}.courseMax = c.grid{2}.courseMax/2.1;
-                c = c.updateGridList;
-                c = c.updateGridColls;
+    methods     
+        function c = refineGridCourseness(c)
+            keepGoin = 1; %keep on trukin
+            while keepGoin
+                c.grid{1}.courseMax = c.grid{1}.courseMax * .7;
+                c.grid{2}.courseMax = c.grid{2}.courseMax * .7;
+                c = c.updateDesiredPointsFromGrid;
+                c = c.updateSavedColls;
+                if length(c.ankle.var1) > 2000
+                    keepGoin = 0;
+                end
             end
         end
-        
+                
+        function c = refineMaxDiff(c)
+            %refineMaxDiff Iterates through colls until difference between 
+            % nearest coll is less than utility.maxDiff
+            
+            %Load saves
+            c.utility.loadSavesNeeded = 1;
+            c = c.loadSaves;
+            
+            %While we haven't gone through the whole list without change
+            thingsChanged = 1;  %set this to get the loop started
+            while thingsChanged
+                thingsChanged = 0; %If we go through the whole loop and this is 0, it ends
+                q = 1;
+                [diff, nearTuple] = c.findDiff(c.points.saved.ankle{q});
+                newLength = numel(c.points.desired);
+                while q < newLength
+                    %While we haven't gone through the whole list
+                    %%%%%CHECK THIS
+                    %%%%%LOOP!!!!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    if diff > c.utility.maxDiff
+                        %Add a point between saved{q} and nearest
+                        newTuple = [mean([c.points.saved.ankle{q}(1),nearTuple(1)]),...
+                                    mean([c.points.saved.ankle{q}(2),nearTuple(2)])];       
+                        assert(~c.tupleExists(newTuple,c.points.desired),'New tuple already Exists')
+                        %Add to desired
+                        c.points.desired{end+1} = newTuple;
+                        %Update colls
+                        c = c.updateSavedColls;
+                        %Note that we changed something
+                        thingsChanged = 1;
+                        %Restart list
+                        q = 1;
+                        %Reset findDiff
+                        [diff, nearTuple] = c.findDiff(c.points.saved.ankle{q});
+                    else
+                        q = q+1;
+                        %Reset findDiff
+                        [diff, nearTuple] = c.findDiff(c.points.saved.ankle{q});
+                    end
+                    newLength = numel(c.points.desired); %look at list len
+                end
+            end
+            disp('Done')
+        end
+            
+        function [diff, nearTuple] = findDiff(c,tuple)
+                %findDiff Finds the difference in % decrease CoT between
+                %tuple and nearest coll
+                 
+                %(If either tuple isn't found in both ankle and noAnkle,
+                %shit breaks)
+                [~, nearColl] = c.findNearestSeed(tuple(1),tuple(2),'ankle');
+                nearCoT = c.getPercentDecreaseCoT(nearColl.param(c.grid{1}.varInd),nearColl.param(c.grid{2}.varInd));
+                diff = abs(nearCoT - c.getPercentDecreaseCoT(tuple(1),tuple(2)));
+                if nargout > 1
+                    nearTuple = [nearColl.param(c.grid{1}.varInd),nearColl.param(c.grid{2}.varInd)];
+                end
+        end
         
         function c = sweepColls(c)
             %sweepColls Load in the grid, sweep up and down until nothing
             %changes
             
-        end
-            
-            
+        end        
         
-        
-        function c = refineMesh(c)
-            %refineMesh Update grid parameters to refine mesh
-        end
-        
-        
-        function c = updateGridColls(c)
-            %updateGridColls Look at grid property + ankle.var1 & var2,
-            %identify missing colls, find a close seed, create those colls
+        function c = updateSavedColls(c)
+            %updateGridColls Look at desired points property, identify missing 
+            %colls, find a close seed, create those colls
             
             %Compare grid and colls to find discrepencies
-            d = missingGridPoints(c);
+            d = missingPoints(c);
             
-            for ana = {'ankle','noAnkle'}
-                %Go through d, findNearestSeed, runColl from that seed
-                for p = 1:numel(d)
-
+            for p = 1:numel(d.ankle)
+                disp([num2str(100*p/numel(d.ankle)), ' % Done'])
+                for ana = {'ankle','noAnkle'}
+                    %Go through d, findNearestSeed, runColl from that seed
+                    
                     %Rename stuff for clarity
-                    var1_temp = d{p}(1);
-                    var2_temp = d{p}(2);
+                    var1_temp = d.(ana{1}){p}(1);
+                    var2_temp = d.(ana{1}){p}(2);
 
                     %Load nearby seed
                     seed = c.findNearestSeed(var1_temp,var2_temp,ana{1});
                     
                     %Change to desired var values
                     seed.param(c.grid{1}.varInd) = var1_temp;
-                    seed.param(c.grid{1}.varInd) = var1_temp;
+                    seed.param(c.grid{2}.varInd) = var2_temp;
 
                     %Run collocation
                     c.collocation(seed);
                 end %missing grid list
             end %ankle or noAnkle
+            c.utility.loadSavesNeeded = 1;
+            c = c.loadSaves;
+            d = missingPoints(c); %Rerun to update colls struct
+            assert((numel(d.ankle)+numel(d.noAnkle)) == 0,'There might be some vars that didnt work')
         end
         
-        function d = missingGridPoints(c)
-            %missingGridPoints Returns difference in saved colls and grid
-            %The difference returned is a struct containing the missing
-            %grid points
+        function d = missingPoints(c)
+            %missingGridPoints Returns difference in saved points and
+            %desired points
+            %The difference returned is a struct of form d.ankle{i} = [var1 var2]
             
-            %Check the saves
+            %Check the saves - update points.saved
             c = c.loadSaves;
+            %Make sure any changes to grid are found in desired points
+            c = c.updateDesiredPointsFromGrid;
+
+            %Look for differences between desired and saved in both ankle
+            %and noAnkle structs, add it to d struct if it's in desired and
+            %not in saved
             
-            %Check some other stuff
-            assert(numel(c.ankle) == numel(c.noAnkle),'Grids of ankle and noAnkle do not much')
-            assert(unique(c.ankle.var1 == c.noAnkle.var1) == 1,'Grid mismatch - var1')
-            assert(unique(c.ankle.var2 == c.noAnkle.var2) == 1,'Grid mismatch - var2')
+            d.ankle = []; d.noAnkle = [];
+            for ana = {'ankle', 'noAnkle'}
+                for i = 1:numel(c.points.desired)
+                    if ~c.tupleExists(c.points.desired{i},c.points.saved.(ana{1}))
+                        d.(ana{1}){end+1} = c.points.desired{i};
+                    end
+                end
+            end   
             
-            %Find the differences between unique saved colls and grid
-            var1Diff = setdiff(c.grid{1}.list,unique(c.ankle.var1));
-            var2Diff = setdiff(c.grid{2}.list,unique(c.ankle.var2));
+            if (numel(d.ankle) + numel(d.noAnkle)) == 0
+%                 disp('No missing grid points')
+            end
+        end
+        
+        function c = updateDesiredPointsFromGrid(c)
+            %updatePoints Makes sure everything in grid is found in
+            %points.desired
             
-            count = 1;
-            for i = 1:length(var2Diff)
-                for j = 1:length(var1Diff)
-                    d{count} = [var1Diff(j), var2Diff(i)];
-                    count = count + 1;
+            c = c.updateGridList;
+            %Build grid tuples
+            gridTuple = []; %initialize
+            for var1 = c.grid{1}.list
+                for var2 = c.grid{2}.list
+                    gridTuple{end+1} = [var1 var2];
                 end
             end
             
-            if numel(var1Diff) + numel(var2Diff) == 0
-                disp('No missing grid points')
-                d = {};
+            %Check that each grid tuple is in desired tuples if it's not,
+            %then add it in
+            for i = 1:numel(gridTuple)
+                if ~c.tupleExists(gridTuple{i},c.points.desired)
+                    c.points.desired{end+1} = gridTuple{i};
+                end
             end
-            
+                    
         end
         
-        function seed = findNearestSeed(c, var1, var2, ankleSwitch)
+        function c = updateDesiredPointsFromSaved(c)
+            %updateDesiredPointsFromSaved Makes sure everything in saved is found in
+            %points.desired
+            
+            %Load saves
+            c = c.loadSaves;
+            
+            %Choose the larger saved struct or grab one
+            if numel(c.points.saved.ankle) >= numel(c.points.saved.noAnkle)
+                saveTuple = c.points.saved.ankle;
+            else
+                saveTuple = c.points.saved.noAnkle;
+            end
+            
+            %Check that each save tuple is in desired tuples if it's not,
+            %then add it in
+            for i = 1:numel(saveTuple)
+                if ~c.tupleExists(saveTuple{i},c.points.desired)
+                    c.points.desired{end+1} = saveTuple{i};
+                end
+            end          
+        end
+        
+        function isIn = tupleExists(c,tuple,tupleCell)
+            %tupleExists Takes a var tuple and a tupleCell cell array and checks
+            %that tuple exists in tupleCell
+            isIn = false; %initialize negative
+            for i = 1:numel(tupleCell)
+                if (tuple(1) == tupleCell{i}(1)) && (tuple(2) == tupleCell{i}(2))
+                    isIn = true;
+                end
+            end
+        end
+        
+        function [seed, seedU] = findNearestSeed(c, var1, var2, ankleSwitch)
             %findNearestSeed Returns the seed struc that is closest to
             %input var1 and var2. ankleSwitch should be 'ankle' or
             %'noAnkle'
             
             %Check the saves
             c = c.loadSaves;
-
-            %Mesh the grid
-%             [var1Grid, var2Grid] = meshgrid(c.grid{1}.list,c.grid{2}.list);
-            var1Colls = unique(c.ankle.var1);
-            var2Colls = unique(c.ankle.var2);
-            [var1Grid, var2Grid] = meshgrid(var1Colls,var2Colls);
             
-            %Make a matrix of 2 norm dist from each entry in matrix
-            norms = sqrt((var1Grid - var1).^2 + (var2Grid - var2).^2);
+            %Go through list of saved points and calculate distances
+            dist = zeros(1,numel(c.points.saved.(ankleSwitch)));
+            for i = 1:numel(c.points.saved.(ankleSwitch))
+                X = [var1 var2; c.points.saved.(ankleSwitch){i}];
+                dist(i) = pdist(X,'euclidean');
+            end
             
-            %Find the mins
-            minNorm = min(min(norms)); %Find the minimum of the distances
-            [var2_listInd,var1_listInd] = find(norms == minNorm); %Find list indicies of min distance
+            %Find the smallest distance
+            smol = c.points.saved.(ankleSwitch)(find(dist == min(dist), 1 ));
             
             %Return the closest opt struc
-            seed = c.findColl(var1Colls(var1_listInd), var2Colls(var2_listInd), ankleSwitch);
+            seed = c.findColl(smol{1}(1), smol{1}(2), ankleSwitch);
+            
+            if nargout > 1
+                %Find seed that is closest, but not the original
+                distU = dist;
+                distU(distU == min(distU)) = inf; %Set original min to inf
+
+                %redo above
+                %Find the smallest distance
+                smolU = c.points.saved.(ankleSwitch)(find(distU == min(distU), 1 ));
+
+                %Return the closest opt struc
+                seedU = c.findColl(smolU{1}(1), smolU{1}(2), ankleSwitch);
+            end
         end
         
         function c = updateGridList(c)
-            %refineColls This method looks at properties grid and max/mins
-            %of ankle/noAnkle vars, makes changes to grid.list
-            c = loadSaves(c); %load in the saves
+            %refineColls This method looks at properties grid: courseness, max/mins
+            %makes changes to grid.list
+            
+            c = c.loadSaves; %load in the saves
+            
+            qRound = @(x) round(x,4); %Slightly easier to type
             
             for i = 1:2
                 assert(c.grid{i}.max > c.grid{i}.min,'grid max must be greater than grid min')
@@ -132,25 +258,25 @@ classdef colls
             
             %Step 1: Check min/max bounds
             %Mins
-            if min(c.ankle.var1) > c.grid{1}.min
+            if qRound(min(c.grid{1}.list)) > qRound(c.grid{1}.min)
                 %Modify list
-                listMod = linspace(c.grid{1}.min, min(c.ankle.var1),ceil((min(c.ankle.var1)-c.grid{1}.min)/c.grid{1}.courseMax)+1);
+                listMod = linspace(c.grid{1}.min, min(c.grid{1}.list),ceil((min(c.grid{1}.list)-c.grid{1}.min)/c.grid{1}.courseMax)+1);
                 c.grid{1}.list = [listMod(1:end-1), c.grid{1}.list];
             end
-            if min(c.ankle.var2) > c.grid{2}.min
+            if qRound(min(c.grid{2}.list)) > qRound(c.grid{2}.min)
                 %Modify list
-                listMod = linspace(c.grid{2}.min, min(c.ankle.var2),ceil((min(c.ankle.var1)-c.grid{2}.min)/c.grid{2}.courseMax)+1);
+                listMod = linspace(c.grid{2}.min, min(c.grid{2}.list),ceil((min(c.grid{2}.list)-c.grid{2}.min)/c.grid{2}.courseMax)+1);
                 c.grid{2}.list = [listMod(1:end-1), c.grid{2}.list];
             end
             %Maxes
-            if max(c.ankle.var1) < c.grid{1}.max
+            if qRound(max(c.grid{1}.list)) < qRound(c.grid{1}.max)
                 %Modify list
-                listMod = linspace(max(c.ankle.var1),c.grid{1}.max,ceil((c.grid{1}.max-max(c.ankle.var1))/c.grid{1}.courseMax)+1);
+                listMod = linspace(max(c.grid{1}.list),c.grid{1}.max,ceil((c.grid{1}.max-max(c.grid{1}.list))/c.grid{1}.courseMax)+1);
                 c.grid{1}.list = [c.grid{1}.list, listMod(2:end)];
             end
-            if max(c.ankle.var2) < c.grid{2}.max
+            if qRound(max(c.grid{2}.list)) < qRound(c.grid{2}.max)
                 %Modify list
-                listMod = linspace(max(c.ankle.var2),c.grid{2}.max,ceil((c.grid{2}.max-max(c.ankle.var2))/c.grid{2}.courseMax)+1);
+                listMod = linspace(max(c.grid{2}.list),c.grid{2}.max,ceil((c.grid{2}.max-max(c.grid{2}.list))/c.grid{2}.courseMax)+1);
                 c.grid{2}.list = [c.grid{2}.list, listMod(2:end)];
             end
             
@@ -176,15 +302,18 @@ classdef colls
                 c.grid{i}.courseMax = max(diff(v{i}));
             end
         end
-            
-        
+                 
         function c = initialize(c)
            %Initialize Builds grid, loads save directory, adds aux progs to
            %path
+            c.utility.maxDiff = 5;
+            c.utility.loadSavesNeeded = 1;
             c = c.gridSet;
             c = c.getSaveDir;
             c = c.addAuxProgs;
             c = c.loadSaves;
+            c = c.updateDesiredPointsFromSaved;
+
         end
         
         function opt = collocation(c, opt)
@@ -217,6 +346,7 @@ classdef colls
                     end
                     filename = strcat('opt_', ankleTag, uniqueID);
                     save(strcat(c.saveDir,'\',filename),'opt');
+                    disp('Got One!')
                     goAgain = 0;
                 end %save if good
             end %while goAgain ~= 0            
@@ -247,6 +377,7 @@ classdef colls
                     %currently not optimal - it's slightly perturbed)
                     opt.param(c.grid{gridSweepInd}.varInd) = list(i);
                     opt = collocation(c, opt);
+                    c.utility.loadSavesNeeded = 1;
                 end %for every var change in upList and downList
                 opt = seed; %Bring the seed back to nominal value and restart upList/downlist
             end %for both lists in full variable sweep
@@ -301,21 +432,22 @@ classdef colls
             elseif strcmp('ankle',ankleSwitch)
                 s = c.ankle;
             else
-                s = []; disp('No opts loaded to colls, check input to findColl');
+                s = []; disp('No opts loaded to colls, 3rd input to findColl should be ankle or noAnkle');
             end
             
             %Check to make sure something was loaded
             if numel(s) > 0
                 %sweep through to find the opt we want
                 seed = []; sweepI = 1; seedsFound = 0;%initialize
-                while numel(seed) == 0 && sweepI <= numel(s.res)
+                while numel(seed) == 0 && sweepI <= length(s.var1)
                     %Note the vars for this opt
-                    var1_temp = round(s.res{sweepI}.param(c.grid{1}.varInd),sigFig);
-                    var2_temp = round(s.res{sweepI}.param(c.grid{2}.varInd),sigFig);
+                    var1_temp = round(s.var1(sweepI),sigFig);
+                    var2_temp = round(s.var2(sweepI),sigFig);
 
                     %Save it if it's the right one
-                    if var1_temp == round(var1,sigFig) && var2_temp == round(var2,sigFig)
-                        seed = s.res{sweepI};
+                    if (var1_temp == round(var1,sigFig)) && (var2_temp == round(var2,sigFig))
+                        load(s.filename{sweepI}); 
+                        seed = opt; clear opt;
                         seedsFound = seedsFound +1;
                     end
                     sweepI = sweepI + 1; %Increment
@@ -331,98 +463,106 @@ classdef colls
         function c = loadSaves(c)
             %loadSaves Load saved coll files in current save directory
             %Updates the ankle and noAnkle properties, sorts by var1                
-            for ankleSwitch = [0 1]
-                %Decide which files to call
-                if ankleSwitch == 1
-                    dirname = strcat(c.saveDir, '\opt_ankle*');
-                elseif ankleSwitch == 0
-                    dirname = strcat(c.saveDir, '\opt_noAnkle*');
-                end
+            if c.utility.loadSavesNeeded == 1
+                for ankleSwitch = [0 1]
+                    %Decide which files to call
+                    if ankleSwitch == 1
+                        dirname = strcat(c.saveDir, '\opt_ankle*');
+                        c.points.saved.ankle = []; %initialize (remove anything existing)
+                    elseif ankleSwitch == 0
+                        dirname = strcat(c.saveDir, '\opt_noAnkle*');
+                        c.points.saved.noAnkle = []; %initialize (remove anything existing)
+                    end
 
-                %Look for coll files by that name
-                strucc = dir(dirname);
-                
-                %Check to make sure something was actually loaded
-                if numel(strucc) ~= 0
-                    %load in optimization structs, noting var1 value
-                    for i = 1:length(strucc)
-                        filename = strucc(i).name;
-                        filename = strcat(c.saveDir, '\', filename);
-                        load(filename)
-                        opt.filename = filename;
-                        results{i} = opt;
-                        varr(i) = opt.param(c.grid{1}.varInd); %list var1, we'll sort by this later
+                    %Look for coll files by that name
+                    strucc = dir(dirname);
 
-                        if round(varr(i),5) == .98
-                            1+1;
-                            varr(i);
+                    %Check to make sure something was actually loaded
+                    if numel(strucc) ~= 0
+                        %load in optimization structs, noting var1 value
+                        for i = 1:length(strucc)
+                            filename = strucc(i).name;
+                            filename = strcat(c.saveDir, '\', filename);
+                            load(filename)
+                            opt.filename = filename;
+                            results{i} = opt;
+                            varr(i) = opt.param(c.grid{1}.varInd); %list var1, we'll sort by this later
+
+    %                         if round(varr(i),5) == .98
+    %                             1+1;
+    %                             varr(i);
+    %                         end
                         end
-                    end
-                    [~,i] = sort(varr); %sort by var1
+                        [~,i] = sort(varr); %sort by var1
 
-                    q=1;
-                    for k = 1:length(i)
-                        results_sorted_var{k} = results{i(k)};
-                        flags(k) = results{i(k)}.collParam.flag;
-                        if results{i(k)}.collParam.flag > 0
-                            res{q} = results_sorted_var{k};
-                            full = stance2Full(results{i(k)});
-                            s.var1(q) = results{i(k)}.param(c.grid{1}.varInd);
-                            s.var2(q) = results{i(k)}.param(c.grid{2}.varInd);
-                            s.cost(q) = results{i(k)}.cost;
-                            s.rInitial(q) = results{i(k)}.r(1);
-                            s.rFinal(q) = results{i(k)}.r(end);
-                            s.yInitial(q) = results{i(k)}.y(1);
-                            s.yFinal(q) = results{i(k)}.y(end);
-                            s.xInitial(q) = results{i(k)}.x(1);
-                            s.xFinal(q) = results{i(k)}.x(end);
-                            s.dyInitial(q) = results{i(k)}.dy(1);
-                            s.dyFinal(q) = results{i(k)}.dy(end);
-                            s.fDamperFinal(q) = results{i(k)}.param(2)*(results{i(k)}.dr0(end) -results{i(k)}.dr(end));
-                            s.fSpringFinal(q) = results{i(k)}.param(3)*(results{i(k)}.r0(end) -results{i(k)}.r(end));
-                            s.tdA(q) = atan2(results{i(k)}.y(1),results{i(k)}.x(1));
-                            flightTime = full.apexToGroundTime + full.groundToApexTime;
-                            s.groundedRunMeasure(q) = flightTime/results{i(k)}.Tstance; %Flight Time / Stance Time
-                            s.peakGRF(q) = max(results{i(k)}.Fleg);
-                            energy = get_energy3(results{i(k)});
-                            s.eLegMech(q) = energy.leg_m;
-                            s.eAnkleMech(q) = energy.ankle_m;
-                            s.damper(q) = energy.damper;
-                            s.deltaRtdLO(q) = results{i(k)}.r(end) - results{i(k)}.r(1);
-                            s.deltaR0tdLO(q) = results{i(k)}.r0(end) - results{i(k)}.r0(1);
-                            s.maxPush(q) = max(results{i(k)}.r0) - min(results{i(k)}.r0);
-                            s.tdCentripedalVel(q) = (results{i(k)}.dx(1).*results{i(k)}.y(1) - results{i(k)}.dy(1) .* results{i(k)}.x(1))./ results{i(k)}.r(1);
-                            s.tdCentripedalF(q) = results{i(k)}.param(1).*s.tdCentripedalVel(q).^2./results{i(k)}.r(1);        
-                            xFlight = results{i(k)}.param(13) * (results{i(k)}.dy(end) - results{i(k)}.dy(1))/ results{i(k)}.param(10);
-                            s.distance(q) = xFlight + results{i(k)}.x(end) - results{i(k)}.x(1);
-                            costEst = (energy.leg_m + energy.ankle_m + energy.ringDamp) ./ s.distance(q);
-                            s.filename{q} = results{i(k)}.filename;
-                            q = q+1;
+                        q=1;
+                        for k = 1:length(i)
+    %                         results_sorted_var{k} = results{i(k)};
+    %                         flags(k) = results{i(k)}.collParam.flag;
+                            if results{i(k)}.collParam.flag > 0
+    %                             res{q} = results_sorted_var{k};
+    %                             full = stance2Full(results{i(k)});
+                                s.var1(q) = results{i(k)}.param(c.grid{1}.varInd);
+                                s.var2(q) = results{i(k)}.param(c.grid{2}.varInd);
+                                s.cost(q) = results{i(k)}.cost;
+    %                             s.rInitial(q) = results{i(k)}.r(1);
+    %                             s.rFinal(q) = results{i(k)}.r(end);
+    %                             s.yInitial(q) = results{i(k)}.y(1);
+    %                             s.yFinal(q) = results{i(k)}.y(end);
+    %                             s.xInitial(q) = results{i(k)}.x(1);
+    %                             s.xFinal(q) = results{i(k)}.x(end);
+    %                             s.dyInitial(q) = results{i(k)}.dy(1);
+    %                             s.dyFinal(q) = results{i(k)}.dy(end);
+    %                             s.fDamperFinal(q) = results{i(k)}.param(2)*(results{i(k)}.dr0(end) -results{i(k)}.dr(end));
+    %                             s.fSpringFinal(q) = results{i(k)}.param(3)*(results{i(k)}.r0(end) -results{i(k)}.r(end));
+    %                             s.tdA(q) = atan2(results{i(k)}.y(1),results{i(k)}.x(1));
+    %                             flightTime = full.apexToGroundTime + full.groundToApexTime;
+    %                             s.groundedRunMeasure(q) = flightTime/results{i(k)}.Tstance; %Flight Time / Stance Time
+    %                             s.peakGRF(q) = max(results{i(k)}.Fleg);
+    %                             energy = get_energy3(results{i(k)});
+    %                             s.eLegMech(q) = energy.leg_m;
+    %                             s.eAnkleMech(q) = energy.ankle_m;
+    %                             s.damper(q) = energy.damper;
+    %                             s.deltaRtdLO(q) = results{i(k)}.r(end) - results{i(k)}.r(1);
+    %                             s.deltaR0tdLO(q) = results{i(k)}.r0(end) - results{i(k)}.r0(1);
+    %                             s.maxPush(q) = max(results{i(k)}.r0) - min(results{i(k)}.r0);
+    %                             s.tdCentripedalVel(q) = (results{i(k)}.dx(1).*results{i(k)}.y(1) - results{i(k)}.dy(1) .* results{i(k)}.x(1))./ results{i(k)}.r(1);
+    %                             s.tdCentripedalF(q) = results{i(k)}.param(1).*s.tdCentripedalVel(q).^2./results{i(k)}.r(1);        
+    %                             xFlight = results{i(k)}.param(13) * (results{i(k)}.dy(end) - results{i(k)}.dy(1))/ results{i(k)}.param(10);
+    %                             s.distance(q) = xFlight + results{i(k)}.x(end) - results{i(k)}.x(1);
+    %                             costEst = (energy.leg_m + energy.ankle_m + energy.ringDamp) ./ s.distance(q);
+                                s.filename{q} = results{i(k)}.filename;
+
+                                %Update saved points
+                                if ankleSwitch == 1
+                                    c.points.saved.ankle{end+1} = [s.var1(q) s.var2(q)];
+                                elseif ankleSwitch == 0
+                                    c.points.saved.noAnkle{end+1} = [s.var1(q) s.var2(q)];
+                                end
+                                q = q+1;
+                            end
                         end
-                    end
-                    s.res = res;
-                    s.varInd = c.grid{1}.varInd;
+    %                     s.res = res;
+    %                     s.varInd = c.grid{1}.varInd;
 
-                    %update class property
-                    if ankleSwitch == 0
-                        c.noAnkle = s;
-                    elseif ankleSwitch == 1
-                        c.ankle = s;
-                    end
-                else
-                    disp(['Nothing found at ', dirname])
-                end %if there's something to load
-            end %For ankle or noAnkle
+                        %update class property
+                        if ankleSwitch == 0
+                            c.noAnkle = s;
+                        elseif ankleSwitch == 1
+                            c.ankle = s;
+                        end
+                    else
+                        disp(['Nothing found at ', dirname])
+                    end %if there's something to load
+                end %For ankle or noAnkle
+                c.utility.loadSavesNeeded = 0;
+            end %If loadSavesNeed == 1
         end 
-        
-%         function c = gridCheck(c)
-%             %checkGrid If grid does not match desired courseness, add
-%             %points
-%         end
         
         function c = gridSet(c)
             %setGrid setup grid structure
             g.varName = 'apex_height';
+            g.varNamePretty = 'Apex Height';
             g.varInd = 12;
             g.nom = 1;
             g.min = .7;
@@ -434,6 +574,7 @@ classdef colls
             c.grid{1} = g;
             
             g.varName = 'apex_velocity';
+            g.varNamePretty = 'Apex Velocity';
             g.varInd = 13;
             g.nom = 1;
             g.min = .4;
@@ -443,26 +584,98 @@ classdef colls
             listHigh = linspace(g.nom,g.max,ceil((g.nom-g.min)/g.courseMax)+1);
             g.list = [listLow listHigh(2:end)];
             c.grid{2} = g;
-        end
-        
-        function c = visualize(c)
-            %Simple, let's just look at the CoT for ankle
             
-            %Mesh the grid
-            [X,Y] = meshgrid(unique(c.ankle.var1),unique(c.ankle.var2));
-            
-            %Assign the CoT to each point
-            for i = 1:size(X,1) %Down the row
-                for j=1:size(X,2) %Down the column
-                    Xtemp = X(i,j); Ytemp = Y(i,j);
-                    costInd = (c.ankle.var1 == Xtemp) & (c.ankle.var2 == Ytemp);
-                    CoT_ankle(i,j) = c.ankle.cost(costInd);
-                    CoT_noAnkle(i,j) = c.noAnkle.cost(costInd);
+            %setup points structure
+            %set initial desired points to grid
+            c.points.desired = [];
+            count = 1;
+            for var1ind = 1:length(c.grid{1}.list)
+                for var2ind = 1:length(c.grid{2}.list)
+                    c.points.desired{count} = [c.grid{1}.list(var1ind) c.grid{2}.list(var2ind)];
+                    count = count+1;
                 end
             end
-            percentDecreaseCoT = 100*(CoT_noAnkle - CoT_ankle)./CoT_noAnkle;
+                
+            c.points.saved.ankle = [];
+            c.points.saved.noAnkle = [];
+        end
+
+        function [X,Y,Z,dots] = getZmesh(c)
+            %getCoTmesh Looks at saved points and returns an interpolated
+            %mesh of x,y,percentCoT data
+            
+            %If ankle and noAnkle saves don't match, take the smaller one so that calculating
+            %percentDecreaseCoT makes sense and throw a warning
+            saves = c.ankle;
+            assert(numel(c.ankle.var1) == numel(c.points.saved.ankle))
+            assert(numel(c.noAnkle.var1) == numel(c.points.saved.noAnkle))
+            if (numel(c.ankle.var1) ~= numel(c.noAnkle.var1)) || (numel(c.ankle.var2) ~= numel(c.noAnkle.var2))
+                warning('mismatch between ankle saves and noAnkle saves') 
+                if numel(c.ankle.var1) < numel(c.noAnkle.var1)
+                    saves = c.ankle;
+                elseif numel(c.points.saved.ankle) > numel(c.points.saved.noAnkle)
+                    saves = c.noAnkle;
+                end
+            end
+            
+            %Get saved vars as a list
+            var1 = saves.var1;
+            var2 = saves.var2;
+
+            %Get z (this is pretty modular)
+            z = c.getPercentDecreaseCoT(var1,var2);
+            
+            %Now make linspaces to build the meshgrid/griddata
+            res = 500;
+            xlin = linspace(min(var1),max(var1),res); %You can change the 100
+            ylin = linspace(min(var2),max(var2),res); %You can change the 100
+            [X,Y] = meshgrid(xlin,ylin);
+            Z = griddata(var1,var2,z,X,Y,'linear');
+            dots.x = var1; dots.y = var2; dots.z = z;
+        end
+        
+        function z = getPercentDecreaseCoT(c,var1,var2)
+            %getPercentDecreaseCoT Take a list of var1 and var2 values and
+            %return the %decreaseCoT for each var tuple
+            
+            assert(length(var1) == length(var2),'Input to getPercentDecreaseCoT must be same length')
+            %Make sure saves and ankle/noAnkle match
+            assert(numel(c.ankle.var1) == numel(c.points.saved.ankle))
+            assert(numel(c.noAnkle.var1) == numel(c.points.saved.noAnkle))
+            
+            %Make sure the requested var1 and var2 values are in
+            %ankle/noAnkle
+            cot.ankle = []; cot.noAnkle = [];
+            for ana = {'ankle','noAnkle'}
+                for i = 1:length(var1)
+                    %Find where each var value is in the list
+                    var1Inds = find(c.(ana{1}).var1 == var1(i));
+                    var2Inds = find(c.(ana{1}).var2 == var2(i));
+                    %Make sure there's overlap
+                    ind = intersect(var1Inds,var2Inds);
+                    assert(~isempty(ind), ...
+                        ['var tuple ' num2str(var1(i)), ', ' num2str(var2(i)), ' not found in ', ana{1}])
+                    cot.(ana{1})(i) = c.(ana{1}).cost(ind);
+                end
+            end
+            
+            %Now calculate percent decrease in CoT
+            z = 100*(cot.noAnkle - cot.ankle)./cot.noAnkle;
+        end
+            
+        function c = visualize(c)
+            %Visualize Make a surface of %CoT decrease
+            c.utility.loadSavesNeeded = 1;
+            c = c.loadSaves;
+            [X,Y,Z, dots] = c.getZmesh;
             figure;
-            surf(X,Y,percentDecreaseCoT);
+            surf(X,Y,Z,'LineStyle','none');
+            hold on;
+            plot3(dots.x,dots.y,dots.z,'r.','MarkerSize',15);
+            xlabel(c.grid{1}.varNamePretty)
+            ylabel(c.grid{2}.varNamePretty)
+            zlabel('Percent Decrease CoT')
+            title('Percent Decrease CoT')
         end
         
         function c = addAuxProgs(c)
