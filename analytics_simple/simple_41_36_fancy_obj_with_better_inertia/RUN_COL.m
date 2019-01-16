@@ -1,14 +1,25 @@
 % MHector
-% 12.20.18
-% Collocation of slip through stance
-function [opt_res] = runOpt(opt)
-    seed = opt.X; modelParam = opt.param; collParam = opt.collParam; seeParam = opt.seeParam;
+% 4.26.18
+% Collocation of slip through stance; v2 includes stance duration as a
+% decision variable
+function [optimized, opt_res] = RUN_COL(seed, modelParam, collParam, seeParam) %TD_angle should be nan unless it is dictated
+%     assert(length(seed) == param.N-1,'Seed was not the expected dimension')
+%     assert(param.Nstance+param.Nflight == param.N, 'Collocation points of stance and flight do not add up to param.N!')
 
-    %Cost function
-    cost_func = @(x) SymObjFunc_Inertia(x, modelParam);
+%     %Cost function
+    cost_func = @(x) SymObjFunc(x, modelParam);
+% 
+%     %Set up nonlinear constraint (which we'll be calling a lot)
+    nonlcon = @(x) SymConFunc(x, modelParam);
+    
+    %Set up hessian
+%     hessian = @(x,lambda) hessfinal(x, lambda, modelParam);
 
-    %Set up nonlinear constraint (which we'll be calling a lot)
-    nonlcon = @(x) SymConFunc_Inertia(x, modelParam);
+    %Set other constraints
+%     load('Aeq_array','Aeq') %Aeq
+%     load('beq_array','beq') %beq
+%     load('A_array','A'); %A
+%     b = -modelParam(end);
 
     %Set bounds
     cp = collParam.N; %Number of collocation points
@@ -34,15 +45,24 @@ function [opt_res] = runOpt(opt)
     lb(1+7*cp:8*cp) = -collParam.anklemax; %Tankle
     lb(8*cp+1) = collParam.tstancemin; %Tstance
     
+%     assert( any(seed(1+2*cp:3*cp) < collParam.r0max) && any(seed(1+2*cp:3*cp) > collParam.r0min), 'error in r0min')
+%     assert( any(seed(1+6*cp:7*cp) < collParam.legmax) && any(seed(1+6*cp:7*cp) > -collParam.legmax), 'error in legT')
+%     assert( any(seed(1+7*cp:8*cp) < collParam.anklemax) && any(seed(1+6*cp:7*cp) > -collParam.anklemax), 'error in ankleT')
+%     assert( any(seed(1+7*cp+collParam.Nstance:8*cp) < 0.01) && any(seed(1+7*cp+collParam.Nstance:8*cp) > -0.01),'ankleT flight error')
+%     assert( any(seed(8*cp+collParam.Nflight +3) < collParam.thetamax) && any(seed(8*cp+collParam.Nflight +3) > -collParam.thetamax), 'error in theta')
+%     assert( seed(8*cp+collParam.Nflight +3) < collParam.apexheightmax && seed(8*cp+collParam.Nflight +3) > collParam.apexheightmin, 'apex height error')
+%     assert( seed(8*cp+collParam.Nflight +1) < collParam.tstancemax && seed(8*cp+collParam.Nflight +1) > collParam.tstancemin, 'time stance error')
+%     assert( seed(8*cp+collParam.Nflight +2) < collParam.tflightmax && seed(8*cp+collParam.Nflight +2) > collParam.tflightmin, 'time flight error')
+
     if collParam.ankles_on == 0 %Turn off ankle torques
         ub(1+7*cp:8*cp) = 0; lb(1+7*cp:8*cp) = 0;
     end
 
     
     %Optimizer parameters
-    collParam.options = optimoptions('fmincon','Display','None','MaxFunctionEvaluations',20000,...
-                    'MaxIterations',15000, 'ConstraintTolerance', 1e-8,...
-                    'UseParallel', true, 'OptimalityTolerance',1e-8, ...
+    collParam.options = optimoptions('fmincon','Display','iter','MaxFunctionEvaluations',20000,...
+                    'MaxIterations',15000, 'ConstraintTolerance', 1e-12,...
+                    'UseParallel', true, 'OptimalityTolerance',1e-12, ...
                     'SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,...
                     'Algorithm','sqp');%,...
                     %'HessianFcn',hessian);%,'CheckGradients', true);

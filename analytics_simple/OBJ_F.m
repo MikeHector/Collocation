@@ -17,9 +17,9 @@ function [ cost ] = OBJ_F( dv, Parameters, smooth )
     Tankle = dv(8,:);
     dr = (x .* dx + y .* dy) ./ r;
     Fleg = Parameters.k * (r0 - r) + Parameters.c * (dr0 - dr);
-    Tleg = -(Parameters.i_motor*Parameters.transmission*ddr0 + Fleg/Parameters.transmission);
-    wkLeg = maxZero((1-Parameters.c_objWeight) * Fleg .* dr0 +...
-            Parameters.c_objWeight * Tleg.^2); %mech and electrical with weight to scale between each
+    Fmotor = Fleg - Parameters.i_motor * ddr0;
+    wkLeg = maxZero((1-Parameters.c_objWeight) * Fmotor .* dr0 +...
+            Parameters.c_objWeight * Fmotor.^2); %mech and electrical with weight to scale between each
     wkAnkle = maxZero((1-Parameters.c_objWeight) * Tankle * Parameters.transmission_ankle .*...
             (x .* dy - y .* dx) ./ (r.^2) + Parameters.c_objWeight * Tankle.^2); %mech and electrical with weight to scale between each
     wkSmooth = abSmooth(ddr0) * Parameters.objWeight;

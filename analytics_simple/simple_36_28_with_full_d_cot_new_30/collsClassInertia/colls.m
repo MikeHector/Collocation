@@ -381,13 +381,14 @@ classdef colls
         function c = initialize(c)
            %Initialize Builds grid, loads save directory, adds aux progs to
            %path
-            c.utility.maxDiff = 5;
-            c.utility.loadSavesNeeded = 1;
+           c.points.desired = [];
+%             c.utility.maxDiff = 5;
+%             c.utility.loadSavesNeeded = 1;
 %             c = c.gridSet;
 %             c = c.getSaveDir;
             c = c.addAuxProgs;
-            c = c.loadSaves;
-            c = c.updateDesiredPointsFromSaved;
+%             c = c.loadSaves;
+%             c = c.updateDesiredPointsFromSaved;
 
         end
         
@@ -790,8 +791,8 @@ classdef colls
 %             c = c.loadSaves;
             [X,Y,Z, dots] = c.getZmesh(extents);
             figure;
-            contourf(X,Y,Z);
-%             surf(X,Y,Z,'LineStyle','none');
+%             contourf(X,Y,Z);
+            surf(X,Y,Z,'LineStyle','none');
             hold on;
 %             plot3(dots.x,dots.y,dots.z,'r.','MarkerSize',15);
             xlabel(c.grid{1}.varNamePretty)
@@ -799,7 +800,8 @@ classdef colls
             zlabel('Percent Decrease')
             title('Ankle Utility')
             cb = colorbar;
-            
+            ylabel(cb,'Ankle Utility (Percent Decrease CoT)');
+            cb.Label.FontSize = 12;
         end
         
         function c = animateVis(c)
@@ -807,7 +809,6 @@ classdef colls
             fig =gcf;
             camDist = norm(fig.Children(2).CameraPosition(1:2));
             res = 60*5;
-            
             for i = 0:res
                 %Set Camera position
                 fig.Children(2).CameraPosition(1:2) = camDist*[cos(2*pi*i/res) sin(2*pi*i/res)];
