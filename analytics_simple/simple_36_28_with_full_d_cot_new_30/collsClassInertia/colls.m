@@ -12,7 +12,213 @@ classdef colls
         utility
     end
     
-    methods     
+    methods 
+        
+        function c = reSeedAreaV2(c, range, ANA)
+            %reSeedArea Finds colls within given bounds, and runs reSeeds
+            %on them
+            
+            %For ankle or noAnkle, parallelizable
+            
+%                 if parVar == 1
+%                     ANA = {'ankle'};
+%                 elseif parVar == 2
+%                     ANA = {'noAnkle'};
+%                 end
+                
+                %Find colls in those bounds
+                var1Inds = find((c.ankle.var1 > range(1)) & (c.ankle.var1 < range(2)));
+                var2Inds = find((c.ankle.var2 > range(3)) & (c.ankle.var2 < range(4)));
+                indsToSeed = intersect(var1Inds,var2Inds);
+
+                %Build into tuples
+                for i = 1:length(indsToSeed)
+                    pListTemp{i} = [c.(ANA{1}).var1(indsToSeed(i)), c.(ANA{1}).var2(indsToSeed(i))];
+    %                 p_noAnkle{i} = [c.noAnkle.var1(indsToSeed(i)), c.noAnkle.var2(indsToSeed(i))];
+                end
+
+                %Go through those coll inds and reseed
+                stopCriteria = 0;
+                count = 1;
+                while ~stopCriteria
+                    if strcmp(ANA{1},'noAnkle')
+%                         disp("I'm parallel!");
+                    end
+                    %Reseed a point from list.
+                    %If there is a successful reseed, pNew will contain the
+                    %surrounding points. 
+                    [c, pNew] = c.reSeedColl(pListTemp{count}(1), pListTemp{count}(2),ANA{1});
+                    %Add them to the list
+                    pListTemp = [pListTemp(1:count), pNew, pListTemp(count+1:end)];
+                    %See if we should stop
+                    if count == numel(pListTemp)
+                        stopCriteria =1;
+                    else
+                        count = count+1;
+                    end
+                    disp([num2str(count/numel(pListTemp)*100), ' % Done'])
+                end    
+        end
+        
+        function c = reSeedArea(c, range)
+            %reSeedArea Finds colls within given bounds, and runs reSeeds
+            %on them
+            
+            %Find colls in those bounds
+            var1Inds = find((c.ankle.var1 > range(1)) & (c.ankle.var1 < range(2)));
+            var2Inds = find((c.ankle.var2 > range(3)) & (c.ankle.var2 < range(4)));
+            indsToSeed = intersect(var1Inds,var2Inds);
+            
+            %Find edge
+            
+            %Go through those coll inds and reseed
+            for i = 1:length(indsToSeed)
+                c = c.reSeedColl(c.ankle.var1(indsToSeed(i)), c.ankle.var2(indsToSeed(i)));
+%                 [c.ankle.var1(indsToSeed(i)), c.ankle.var2(indsToSeed(i))]
+                disp([num2str(i/length(indsToSeed)*100), ' % Done'])
+            end            
+        end
+        
+        function c = fixSpikes(c, zRange)
+            %fixSpikes Finds every z outside zRange, and
+            %reseeds the coll with points around it
+            %zRange = [zLow zHigh], where zLow to zHigh is an acceptable
+            %range of z
+            
+            %Get the z values
+            [~,~,~, dots] = c.getZmesh([-inf inf -inf inf]);
+            
+            %Find the bad indecies
+            badInds = find((dots.z < zRange(1)) | (dots.z > zRange(2)));
+            
+            %Go through bad guys reseed
+            for i = 1:length(badInds)
+                %Reseed the bad colls
+                c = c.reSeedColl(dots.x(badInds(i)),dots.y(badInds(i)));
+            end
+
+        end
+        
+        function [c, pOut] = reSeedColl(c,var1,var2,anaIn)
+            %reSeedColl Finds a var1,var2 tuple and reseeds with nearby
+            %colls to try to lower the cost function and smooth graphs
+            
+            threshForNewPoint = 1; %percent
+            %Go through both ankle and noAnkle if not specified
+            if nargin == 3
+                ankleNoAnkle = {'ankle','noAnkle'};
+            else 
+                ankleNoAnkle = {anaIn};
+            end
+            
+            %Build list of nearby var values
+            var1U = unique(c.(ankleNoAnkle{1}).var1); var2U = unique(c.(ankleNoAnkle{1}).var2);
+            var1Uindex = find(var1 == var1U);
+            var2Uindex = find(var2 == var2U);
+            p = [];
+            %All the trys are gonna allow for only a few points to be added
+            %if we're at an edge case at which only 3 points are available
+            %to reseed (only 2 if you're at a corner) TODO: Find a better
+            %way to implement this
+            try
+                p{end+1} = [var1U(var1Uindex+1) var2U(var2Uindex)]; %right a little up none
+            catch
+            end
+            try
+                p{end+1} = [var1U(var1Uindex) var2U(var2Uindex+1)]; %over none, up a little
+            catch
+            end
+            try
+                p{end+1} = [var1U(var1Uindex-1) var2U(var2Uindex)]; %left a little up none
+            catch
+            end
+            try
+                p{end+1} = [var1U(var1Uindex) var2U(var2Uindex-1)]; %over none, down a little
+            catch
+            end
+            
+            %For ankle or noAnkle
+%             p = []; MAYBE RESEED FROM ANKLE/NOANKLE AS WELL???
+            
+            for ana = ankleNoAnkle
+                [opt, optFilename] = c.findColl(var1,var2, ana{1}); %opt to be reseeded
+                originalCost = opt.cost;
+                for i = 1:numel(p) %For each of surrounding points
+                    %Find nearby opt structure
+                    opt_nearby = c.findColl(p{i}(1),p{i}(2),ana{1});
+                    
+                    %Reseed original from nearby
+                    opt.X = opt_nearby.X;
+                    
+                    %Run collocation with condition that it will save iff
+                    %the cost is lower
+                    [c,opt,deltaJ] = c.collocation(opt, optFilename, 1);
+                end
+            end
+            if 100*deltaJ/originalCost > threshForNewPoint %Percent change> threshhold
+                pOut = p;
+                disp('More points added')
+            else
+                pOut = [];
+            end
+        end
+        
+        
+        
+        function c = fixLessThanZeroColls(c, var1Range, var2Range, Zthresh)
+            %smoothColls Will re-run colls that are below a threshhold
+            %Zthresh
+            
+            %Get Z mesh
+            [X,Y,Z, dots] = c.getZmesh([var1Range var2Range]);
+            
+            %Find points that need to be redone
+            1+1;
+            dotIndsToFix = find(dots.z < Zthresh);
+            
+            ankleUtility(c,dotIndsToFix(1),dots);
+            %Go through that list to fix them
+            for i = 1:length(dotIndsToFix)
+                %Seed ankle from noAnkle and rerun opt
+                [optAnkle, ankleFile] = c.findColl(dots.x(dotIndsToFix(i)),dots.y(dotIndsToFix(i)),'ankle');
+                [optnoAnkle, ~] = c.findColl(dots.x(dotIndsToFix(i)),dots.y(dotIndsToFix(i)),'noAnkle');
+                
+                %Set ankle to noAnkle traj
+                optAnkle.X = optnoAnkle.X;
+                
+                %Rerun ankle opt
+                c.collocation(optAnkle, ankleFile);
+            end
+            
+%             ankleUtility(c,dotIndsToFix(1),dots);
+            
+            
+%             for i = 1:length(dotIndsToFix)
+%                 while ankleUtility(c,dotIndsToFix(i),dots) < 0 %While there's a negative CoT improvement
+%                     for ana = {'ankle', 'noAnkle'}
+%                         %Get opt to fix
+%                         opt_temp = c.findColl(dots.x(dotIndsToFix(i)),dots.y(dotIndsToFix(i)),ana{1});
+% 
+%                         %Find nearby opt
+%                         [~,opt_near] = c.findNearestSeed(dots.x(dotIndsToFix(i)),dots.y(dotIndsToFix(i)),ana{1});  
+%                         
+%                         %Set seed to nearby value
+%                         opt_temp.X = opt_near.X;
+% 
+%                         %Rerun opt
+%                         [c, optNew] = c.collocation(opt_temp, c.(ana{1}).filename{i});
+% 
+%                     end
+%                 end
+%             end
+            
+            function z = ankleUtility(c,dotInd,dots)
+                aOpt = c.findColl(dots.x(dotInd),dots.y(dotInd),'ankle');
+                naOpt = c.findColl(dots.x(dotInd),dots.y(dotInd),'noAnkle');
+                z = 100*(naOpt.cost-aOpt.cost)/naOpt.cost;
+            end
+        end
+        
         
         function c = reSweep(c, collsList)
             %reSweep Smooths out saved colls by reseeding optimizations. 
@@ -156,30 +362,63 @@ classdef colls
             %Compare grid and colls to find discrepencies
             [c, d] = missingPoints(c);
             
-            for p = 1:numel(d.ankle)
-                for ana = {'ankle','noAnkle'}
-                    %Go through d, findNearestSeed, runColl from that seed
-                    
-                    %Rename stuff for clarity
-                    var1_temp = d.(ana{1}){p}(1);
-                    var2_temp = d.(ana{1}){p}(2);
+            if numel(d.ankle) == numel(d.noAnkle)
+                sameLen = 1;
+            else 
+                sameLen = 0;
+            end
+            switch sameLen
+                case 1  %The d lists have the same length, hope that the vars are in
+                        %the same order so that noAnkle/ankle pairs can be
+                        %calculated together. If they're out of order
+                        %nothing really breaks tho
+                    for p = 1:numel(d.ankle)
+                        for ana = {'ankle','noAnkle'}
+                            %Go through d, findNearestSeed, runColl from that seed
+                            %Rename stuff for clarity
+                            var1_temp = d.(ana{1}){p}(1);
+                            var2_temp = d.(ana{1}){p}(2);
 
-                    %Load nearby seed
-                    seed = c.findNearestSeed(var1_temp,var2_temp,ana{1});
-                    
-                    %Change to desired var values
-                    seed.param(c.grid{1}.varInd) = var1_temp;
-                    seed.param(c.grid{2}.varInd) = var2_temp;
+                            %Load nearby seed
+                            seed = c.findNearestSeed(var1_temp,var2_temp,ana{1});
 
-                    %Run collocation
-                    c = c.collocation(seed);
-                end %missing grid list
-                disp([num2str(100*p/numel(d.ankle)), ' % Done'])
-            end %ankle or noAnkle
+                            %Change to desired var values
+                            seed.param(c.grid{1}.varInd) = var1_temp;
+                            seed.param(c.grid{2}.varInd) = var2_temp;
+
+                            %Run collocation
+                            c = c.collocation(seed);
+                        end %missing grid list
+                        disp([num2str(100*p/numel(d.ankle)), ' % Done'])
+                     end %ankle or noAnkle
+                     
+                case 0 %The d list is uneven, so split it by ankle/noAnkle and go one by one
+                    for ana = {'ankle','noAnkle'}
+                        for p = 1:numel(d.(ana{1}))
+                            %Go through d, findNearestSeed, runColl from that seed
+                            %Rename stuff for clarity
+                            var1_temp = d.(ana{1}){p}(1);
+                            var2_temp = d.(ana{1}){p}(2);
+
+                            %Load nearby seed
+                            seed = c.findNearestSeed(var1_temp,var2_temp,ana{1});
+
+                            %Change to desired var values
+                            seed.param(c.grid{1}.varInd) = var1_temp;
+                            seed.param(c.grid{2}.varInd) = var2_temp;
+
+                            %Run collocation
+                            c = c.collocation(seed);
+                        end %missing grid list
+                        disp([num2str(100*p/numel(d.ankle)), ' % Done'])
+                     end %ankle or noAnkle
+            end
             c.utility.loadSavesNeeded = 1;
             c = c.loadSaves;
-            d = missingPoints(c); %Rerun to update colls struct
-            assert((numel(d.ankle)+numel(d.noAnkle)) == 0,'There might be some vars that didnt work')
+            [c,d] = missingPoints(c); %Rerun to update colls struct
+            if (numel(d.ankle)+numel(d.noAnkle)) ~= 0
+                warning('There might be some vars that didnt work')
+            end
 
         end
         
@@ -224,6 +463,8 @@ classdef colls
             if (numel(dTemp.ankle) + numel(dTemp.noAnkle)) == 0
 %                 disp('No missing grid points')
             end
+            
+            
         end
         
         function c = updateDesiredPointsFromGrid(c)
@@ -305,7 +546,7 @@ classdef colls
             %Return the closest opt struc
             seed = c.findColl(smol{1}(1), smol{1}(2), ankleSwitch);
             
-            if nargout > 1
+            if nargout == 2
                 %Find seed that is closest, but not the original
                 distU = dist;
                 distU(distU == min(distU)) = inf; %Set original min to inf
@@ -316,6 +557,12 @@ classdef colls
 
                 %Return the closest opt struc
                 seedU = c.findColl(smolU{1}(1), smolU{1}(2), ankleSwitch);
+%             
+%             elseif nargout == 3
+%                 %Find the 4 seeds on either side of seed
+%                 assert(min(dist) == 0,'Seed might not be here')
+%                 
+                
             end
         end
         
@@ -328,7 +575,7 @@ classdef colls
             qRound = @(x) round(x,4); %Slightly easier to type
             
             for i = 1:2
-                assert(c.grid{i}.max > c.grid{i}.min,'grid max must be greater than grid min')
+                assert(c.grid{i}.max >= c.grid{i}.min,'grid max must be greater than grid min')
             end
             
             %Step 1: Check min/max bounds
@@ -392,7 +639,7 @@ classdef colls
 
         end
         
-        function c = collocation(c, opt)
+        function [c, opt, deltaJ] = collocation(c, opt, prevFilename, checkCost)
             %collocation Runs collocation based on opt and seed structure.
             %Seed structure sould be close to opt, but slightly different
             
@@ -400,6 +647,11 @@ classdef colls
             numPerturb = 3;
             tryCounter = 1;
             goAgain = 1;
+            if nargin < 4
+                saveIt = 1;
+            end
+            originalCost = opt.cost;
+            deltaJ = -inf;  %originalCost - newCost; positive is good
             
             while tryCounter <= numPerturb && goAgain ~= 0
 
@@ -422,9 +674,31 @@ classdef colls
                     end
                     filename = strcat('opt_', ankleTag, uniqueID);
                     filename = strcat(c.saveDir,'\',filename);
-                    save(filename,'opt');
-                    disp('Got One!')
-                    c = c.addSaves(opt, filename);
+                    
+                    if nargin >=3
+                        filename = prevFilename;
+                    end
+                    
+                    if nargin == 4 && checkCost == 1
+                        %Check whether or not to save
+                        deltaJ = originalCost - opt.cost;
+                        if opt.cost < originalCost
+                            saveIt = 1;
+                        else
+                            saveIt = 0;
+                        end
+                    end
+                        
+                    if saveIt == 1
+                        save(filename,'opt');
+                        if nargin == 4 && checkCost == 1
+                            disp(['New Save!   deltaJ = ', num2str(deltaJ)]);
+                        end
+                    end
+                    
+                    if nargin == 1
+                        c = c.addSaves(opt, filename);
+                    end
                     goAgain = 0;
                 end %save if good
             end %while goAgain ~= 0            
@@ -497,7 +771,7 @@ classdef colls
             end
         end
 
-        function seed = findColl(c, var1, var2, ankleSwitch)
+        function [seed, collFilename] = findColl(c, var1, var2, ankleSwitch)
             %findColl Finds collocation file given var1 and var2 values
             %Takes var1 and var2 scalars, ankleOn 1 or 0, returns opt struct
             c = loadSaves(c);
@@ -526,6 +800,7 @@ classdef colls
                     if (var1_temp == round(var1,sigFig)) && (var2_temp == round(var2,sigFig))
                         try
                             load(s.filename{sweepI}); 
+                            collFilename = s.filename{sweepI};
                         catch
                             pause(5)
                             load(s.filename{sweepI}); 
@@ -568,7 +843,7 @@ classdef colls
             
         end
         
-        function c = loadSaves(c)
+        function c = loadSaves(c, more)
             %loadSaves Load saved coll files in current save directory
             %Updates the ankle and noAnkle properties, sorts by var1                
             if c.utility.loadSavesNeeded == 1
@@ -613,10 +888,7 @@ classdef colls
                                 s.var1(q) = results{i(k)}.param(c.grid{1}.varInd);
                                 s.var2(q) = results{i(k)}.param(c.grid{2}.varInd);
                                 s.cost(q) = results{i(k)}.cost;
-    %                             s.rInitial(q) = results{i(k)}.r(1);
-    %                             s.rFinal(q) = results{i(k)}.r(end);
-    %                             s.yInitial(q) = results{i(k)}.y(1);
-    %                             s.yFinal(q) = results{i(k)}.y(end);
+                                
     %                             s.xInitial(q) = results{i(k)}.x(1);
     %                             s.xFinal(q) = results{i(k)}.x(end);
     %                             s.dyInitial(q) = results{i(k)}.dy(1);
@@ -625,9 +897,17 @@ classdef colls
     %                             s.fSpringFinal(q) = results{i(k)}.param(3)*(results{i(k)}.r0(end) -results{i(k)}.r(end));
     %                             s.tdA(q) = atan2(results{i(k)}.y(1),results{i(k)}.x(1));
     %                             flightTime = full.apexToGroundTime + full.groundToApexTime;
-    %                             s.groundedRunMeasure(q) = flightTime/results{i(k)}.Tstance; %Flight Time / Stance Time
+%                                 s.groundedRunMeasure(q) = flightTime/results{i(k)}.Tstance; %Flight Time / Stance Time
     %                             s.peakGRF(q) = max(results{i(k)}.Fleg);
-    %                             energy = get_energy3(results{i(k)});
+                                if nargin == 2
+                                    s.rInitial(q) = results{i(k)}.r(1);
+                                    s.rFinal(q) = results{i(k)}.r(end);
+                                    s.yInitial(q) = results{i(k)}.y(1);
+                                    s.yFinal(q) = results{i(k)}.y(end);
+                                    energy = get_energy4(results{i(k)});
+                                    s.distance(q) = energy.dist;
+                                    s.eIn(q) = energy.eIn;
+                                end
     %                             s.eLegMech(q) = energy.leg_m;
     %                             s.eAnkleMech(q) = energy.ankle_m;
     %                             s.damper(q) = energy.damper;
@@ -738,7 +1018,7 @@ classdef colls
             var1 = var1(var2Inds); var2 = var2(var2Inds);
             
             %Get z (this is pretty modular)
-            z = c.getPercentDecreaseCoT(var1,var2);
+            [z, cot] = c.getPercentDecreaseCoT(var1,var2);
             
             %Now make linspaces to build the meshgrid/griddata
             res = 500;
@@ -746,10 +1026,11 @@ classdef colls
             ylin = linspace(min(var2),max(var2),res); %You can change the 100
             [X,Y] = meshgrid(xlin,ylin);
             Z = griddata(var1,var2,z,X,Y,'linear');
-            dots.x = var1; dots.y = var2; dots.z = z;
+            dots.x = var1; dots.y = var2; dots.z = z; dots.cotAnkle = cot.ankle;
+            dots.cotNoAnkle = cot.noAnkle;
         end
         
-        function z = getPercentDecreaseCoT(c,var1,var2)
+        function [z, cot] = getPercentDecreaseCoT(c,var1,var2)
             %getPercentDecreaseCoT Take a list of var1 and var2 values and
             %return the %decreaseCoT for each var tuple
             
@@ -782,26 +1063,34 @@ classdef colls
             z = 100*(cot.noAnkle - cot.ankle)./cot.noAnkle;
         end
             
-        function c = visualize(c, extents)
+        function c = visualize(c, extents, line)
             %Visualize Make a surface of %CoT decrease
             if nargin == 1
-                extents = [-inf inf -inf inf];
+                extents = [-inf inf -inf inf];               
             end
+            
 %             c.utility.loadSavesNeeded = 1;
 %             c = c.loadSaves;
             [X,Y,Z, dots] = c.getZmesh(extents);
             figure;
-%             contourf(X,Y,Z);
-            surf(X,Y,Z,'LineStyle','none');
-            hold on;
-%             plot3(dots.x,dots.y,dots.z,'r.','MarkerSize',15);
-            xlabel(c.grid{1}.varNamePretty)
-            ylabel(c.grid{2}.varNamePretty)
-            zlabel('Percent Decrease')
-            title('Ankle Utility')
-            cb = colorbar;
-            ylabel(cb,'Ankle Utility (Percent Decrease CoT)');
-            cb.Label.FontSize = 12;
+            if nargin < 3
+                contourf(X,Y,Z);
+%                 surf(X,Y,Z,'LineStyle','none');
+                hold on;
+%                 plot3(dots.x,dots.y,dots.z,'r.','MarkerSize',15);
+                xlabel(c.grid{1}.varNamePretty)
+                ylabel(c.grid{2}.varNamePretty)
+                zlabel('Percent Decrease')
+                title('Ankle Utility')
+                cb = colorbar;
+                ylabel(cb,'Ankle Utility (Percent Decrease CoT)');
+                cb.Label.FontSize = 12;
+            elseif nargin == 3
+                plot(dots.x, dots.z)
+                xlabel(c.grid{1}.varNamePretty)
+                ylabel('Percent Decrease')
+                title('Ankle Utility')                
+            end
         end
         
         function c = animateVis(c)

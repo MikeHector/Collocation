@@ -9,14 +9,17 @@ function [cost] = get_energy3(OPT_RES, plotifone)
     g = OPT_RES.param(10);
     k = OPT_RES.param(3);
     c = OPT_RES.param(2);
+    I = OPT_RES.param(6);
 
     transmission_ankle = OPT_RES.param(9);    
     eps = .001;
     abSmooth = @(x) sqrt(x.^2 + eps.^2) - eps;
+    maxZero = MikeMax(3);
     
     Fleg = k * (OPT_RES.r0 - OPT_RES.r) + c *(OPT_RES.dr0 - OPT_RES.dr);
-    wkLeg = @(k) abSmooth(Fleg(k) .* OPT_RES.dr0(k));
-    wkAnkle = @(k) abSmooth(OPT_RES.Tankle(k) * transmission_ankle .*...
+    Fmotor = Fleg - I*OPT_RES.ddr0;
+    wkLeg = @(k) maxZero(Fmotor(k) .* OPT_RES.dr0(k));
+    wkAnkle = @(k) maxZero(OPT_RES.Tankle(k) * transmission_ankle .*...
             (OPT_RES.x(k) .* OPT_RES.dy(k) - OPT_RES.y(k) .* OPT_RES.dx(k)) ./ (OPT_RES.r(k).^2));
     
 
@@ -27,7 +30,7 @@ function [cost] = get_energy3(OPT_RES, plotifone)
     
     cost.leg_m = cost_leg_m;
     cost.ankle_m = cost_ankle_m;
-    cost.ringDamp = sum(abSmooth(OPT_RES.ddr0)*hk*OPT_RES.param(24));
+    cost.ringDamp = trapz(abSmooth(OPT_RES.ddr0)*hk*OPT_RES.param(24));
     
     %Damper energy
     hk = diff(OPT_RES.t)';

@@ -6,7 +6,7 @@
 %solution as a seed for the next optimization
 clear; clc;
 
-filename = 'ankle';
+filename = 'noAnkle_noI_alpha1';
 load(filename)
 opt_seed = opt.X;
 param = opt.param;  
@@ -17,7 +17,7 @@ iterationCounter = 0;
 lowest_cost = opt.cost+1000;
 goodCounter = 0;
 
-while iterationCounter < 3
+while iterationCounter < 10
     [~, opt] = RUN_COL(opt_seed, param, collParam, seeParam);
     opt_seed = opt.X;
     param = opt.param;  
